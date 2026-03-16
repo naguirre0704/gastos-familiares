@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { Gasto, Comercio, Categoria, Presupuesto } from "@/types";
+import { Gasto, Comercio, Categoria, Presupuesto, Importacion } from "@/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 
@@ -199,4 +199,22 @@ export async function upsertPresupuesto(
     presupuestos[idx].presupuesto = presupuesto;
   }
   await writeJson("presupuestos.json", presupuestos);
+}
+
+// ─── IMPORTACIONES ────────────────────────────────────────────────────────────
+
+export async function getImportaciones(): Promise<Importacion[]> {
+  const list = await readJson<Importacion[]>("importaciones.json", []);
+  return list.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
+export async function appendImportacion(imp: Importacion): Promise<void> {
+  const list = await readJson<Importacion[]>("importaciones.json", []);
+  list.push(imp);
+  await writeJson("importaciones.json", list);
+}
+
+export async function getUltimaImportacion(): Promise<Importacion | null> {
+  const list = await getImportaciones();
+  return list[0] ?? null;
 }

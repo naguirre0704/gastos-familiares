@@ -35,6 +35,13 @@ export interface Presupuesto {
   presupuesto: number;
 }
 
+export interface Importacion {
+  id: string;
+  timestamp: string; // ISO date-time
+  cantidad: number;  // gastos imported
+  desdeDate: string; // "YYYY/MM/DD" — Gmail after: filter used
+}
+
 export interface ResumenCategoria {
   categoria: Categoria;
   gastado: number;

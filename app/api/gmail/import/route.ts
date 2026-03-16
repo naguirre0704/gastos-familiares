@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appendGasto, upsertComercio } from "@/lib/storage";
+import { appendGasto, upsertComercio, appendImportacion } from "@/lib/storage";
 import { v4 as uuid } from "uuid";
 
 interface GastoImport {
@@ -15,7 +15,7 @@ interface GastoImport {
 
 export async function POST(req: NextRequest) {
   try {
-    const { gastos }: { gastos: GastoImport[] } = await req.json();
+    const { gastos, desdeDate }: { gastos: GastoImport[]; desdeDate?: string } = await req.json();
     if (!Array.isArray(gastos) || gastos.length === 0) {
       return NextResponse.json({ error: "Sin gastos para importar" }, { status: 400 });
     }
@@ -40,6 +40,13 @@ export async function POST(req: NextRequest) {
         await upsertComercio(g.comercio, g.categoria, g.fecha);
       }
     }
+
+    await appendImportacion({
+      id: uuid(),
+      timestamp: new Date().toISOString(),
+      cantidad: gastos.length,
+      desdeDate: desdeDate ?? "2025/12/31",
+    });
 
     return NextResponse.json({ imported: gastos.length });
   } catch (error) {

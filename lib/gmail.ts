@@ -239,25 +239,21 @@ function parseTransferencia(id: string, payload: unknown): GastoParseado | null 
 
 // ── Main fetcher ──────────────────────────────────────────────────────────────
 
-export async function fetchGastosDeGmail(): Promise<GastoParseado[]> {
+export async function fetchGastosDeGmail(afterDate = "2025/12/31"): Promise<GastoParseado[]> {
   const auth = await getAuthenticatedClient();
   if (!auth) throw new Error("Gmail no conectado");
 
   const gmail = google.gmail({ version: "v1", auth });
 
-  // Banco de Chile purchase notifications in 2026
-  const query = `from:enviodigital@bancochile.cl after:2025/12/31`;
-
   const listRes = await gmail.users.messages.list({
     userId: "me",
-    q: query,
+    q: `from:enviodigital@bancochile.cl after:${afterDate}`,
     maxResults: 500,
   });
 
-  // Also fetch transfer notifications
   const transferenciaRes = await gmail.users.messages.list({
     userId: "me",
-    q: `from:serviciodetransferencias@bancochile.cl after:2025/12/31`,
+    q: `from:serviciodetransferencias@bancochile.cl after:${afterDate}`,
     maxResults: 500,
   });
 
