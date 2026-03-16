@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "review:ui": "npx tsx agents/ux-reviewer.ts"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.76",
     "googleapis": "^171.4.0",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
