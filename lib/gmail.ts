@@ -13,12 +13,17 @@ export function getOAuth2Client() {
   );
 }
 
-export function getAuthUrl() {
+export function generateOAuthState(): string {
+  return crypto.randomUUID();
+}
+
+export function getAuthUrl(state: string) {
   const auth = getOAuth2Client();
   return auth.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES,
     prompt: "consent",
+    state,
   });
 }
 

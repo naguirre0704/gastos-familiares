@@ -59,10 +59,20 @@ CREATE TABLE IF NOT EXISTS gmail_tokens (
   tokens JSONB NOT NULL
 );
 
--- Disable Row Level Security (this is a private server-side app)
-ALTER TABLE gastos       DISABLE ROW LEVEL SECURITY;
-ALTER TABLE categorias   DISABLE ROW LEVEL SECURITY;
-ALTER TABLE comercios    DISABLE ROW LEVEL SECURITY;
-ALTER TABLE presupuestos DISABLE ROW LEVEL SECURITY;
-ALTER TABLE importaciones DISABLE ROW LEVEL SECURITY;
-ALTER TABLE gmail_tokens DISABLE ROW LEVEL SECURITY;
+-- Enable RLS on all tables (defense in depth)
+-- The app uses service_role key server-side which bypasses RLS,
+-- but RLS protects against accidental anon/public key exposure.
+ALTER TABLE gastos        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categorias    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comercios     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE presupuestos  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE importaciones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gmail_tokens  ENABLE ROW LEVEL SECURITY;
+
+-- Deny all access via anon/authenticated roles (service_role bypasses this)
+CREATE POLICY "deny_all_gastos"        ON gastos        FOR ALL USING (false);
+CREATE POLICY "deny_all_categorias"    ON categorias    FOR ALL USING (false);
+CREATE POLICY "deny_all_comercios"     ON comercios     FOR ALL USING (false);
+CREATE POLICY "deny_all_presupuestos"  ON presupuestos  FOR ALL USING (false);
+CREATE POLICY "deny_all_importaciones" ON importaciones FOR ALL USING (false);
+CREATE POLICY "deny_all_gmail_tokens"  ON gmail_tokens  FOR ALL USING (false);

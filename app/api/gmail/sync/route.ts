@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { fetchGastosDeGmail, isGmailConnected } from "@/lib/gmail";
 import { getGastos, getComercios, getUltimaImportacion } from "@/lib/storage";
+import { apiError } from "@/lib/api";
+
+const GMAIL_DATE_RE = /^\d{4}\/\d{2}\/\d{2}$/;
+const FALLBACK_DATE = "2025/12/31";
 
 function toGmailDate(iso: string): string {
-  // ISO -> "YYYY/MM/DD" for Gmail after: filter
   const d = new Date(iso);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -11,9 +14,18 @@ function toGmailDate(iso: string): string {
   return `${y}/${m}/${day}`;
 }
 
+function safeGmailDate(raw: string): string {
+  // Validate format before interpolating into Gmail query (VULN-13)
+  return GMAIL_DATE_RE.test(raw) ? raw : FALLBACK_DATE;
+}
+
 export async function GET() {
-  const connected = await isGmailConnected();
-  return NextResponse.json({ connected });
+  try {
+    const connected = await isGmailConnected();
+    return NextResponse.json({ connected });
+  } catch (error) {
+    return apiError(error);
+  }
 }
 
 export async function POST() {
@@ -24,7 +36,7 @@ export async function POST() {
     }
 
     const ultima = await getUltimaImportacion();
-    const afterDate = ultima ? toGmailDate(ultima.timestamp) : "2025/12/31";
+    const afterDate = safeGmailDate(ultima ? toGmailDate(ultima.timestamp) : FALLBACK_DATE);
 
     const [gmailGastos, existentes, comercios] = await Promise.all([
       fetchGastosDeGmail(afterDate),
@@ -32,7 +44,6 @@ export async function POST() {
       getComercios(),
     ]);
 
-    // Deduplicate by gmailId
     const gmailIdsExistentes = new Set(
       existentes.filter((g) => g.gmailId).map((g) => g.gmailId)
     );
@@ -50,7 +61,6 @@ export async function POST() {
 
     return NextResponse.json({ pendientes, total: gmailGastos.length, desdeDate: afterDate });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(error);
   }
 }

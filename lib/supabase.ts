@@ -1,3 +1,4 @@
+import "server-only"; // Prevents accidental client-side import of service role key
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 // Lazy singleton — only instantiated at runtime when env vars are available
