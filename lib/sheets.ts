@@ -235,6 +235,22 @@ export async function getCategorias(accessToken: string, sheetId: string): Promi
   }));
 }
 
+export async function appendCategoria(
+  accessToken: string,
+  sheetId: string,
+  categoria: Omit<Categoria, "activa">
+): Promise<void> {
+  const sheets = getSheetsClient(accessToken);
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: "categorias!A2",
+    valueInputOption: "RAW",
+    requestBody: {
+      values: [[categoria.nombre, categoria.emoji, categoria.color, categoria.presupuestoMensual, "true"]],
+    },
+  });
+}
+
 export async function updateCategoria(
   accessToken: string,
   sheetId: string,
