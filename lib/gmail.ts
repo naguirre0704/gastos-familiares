@@ -207,9 +207,12 @@ function parseTransferencia(id: string, payload: unknown): GastoParseado | null 
   if (!body) return null;
 
   // Destination name: "Nombre y Apellido     Camila Bravo"
-  const nombreM = body.match(/Nombre y Apellido\s+(.+)/i);
+  // Stop at multi-space, digit (Rut) or newline to avoid capturing subsequent table fields
+  const nombreM = body.match(
+    /Nombre y Apellido\s+([A-Za-záéíóúüñÁÉÍÓÚÜÑ]+(?: [A-Za-záéíóúüñÁÉÍÓÚÜÑ]+)*)/i
+  );
   if (!nombreM) return null;
-  const destino = nombreM[1].trim().split(/\r?\n/)[0].trim();
+  const destino = nombreM[1].trim();
 
   // Amount — reuse parseMonto (matches "Monto   $10.000")
   const monto = parseMonto(body);
