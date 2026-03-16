@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const [pendingGastos, setPendingGastos] = useState<PendingGasto[]>([]);
   const [currentPending, setCurrentPending] = useState<PendingGasto | null>(null);
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
-  const mesActual = getMesActual();
+  const [mesFiltro, setMesFiltro] = useState(getMesActual());
 
   const fetchData = useCallback(async () => {
     try {
@@ -117,9 +117,26 @@ export default function DashboardPage() {
     setEditingGasto(null);
   }
 
+  // ─── Meses disponibles (solo meses con al menos un gasto) ────────────────
+
+  const mesesDisponibles = Array.from(
+    new Set(
+      gastos
+        .filter((g) => g.fecha && g.fecha.split("/").length === 3)
+        .map((g) => {
+          const parts = g.fecha.split("/");
+          return `${parts[2]}-${parts[1]}`;
+        })
+    )
+  ).sort();
+
+  const idxMes = mesesDisponibles.indexOf(mesFiltro);
+  const puedePrev = idxMes > 0;
+  const puedeNext = idxMes < mesesDisponibles.length - 1;
+
   // ─── Compute summaries ────────────────────────────────────────────────────
 
-  const gastosDelMes = filtrarMes(gastos, mesActual);
+  const gastosDelMes = filtrarMes(gastos, mesFiltro);
   const totalGastado = gastosDelMes.reduce((s, g) => s + g.monto, 0);
   const totalPresupuestado = categorias
     .filter((c) => c.activa)
@@ -164,7 +181,7 @@ export default function DashboardPage() {
     );
   }
 
-  const [year, month] = mesActual.split("-");
+  const [year, month] = mesFiltro.split("-");
   const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString("es-CL", {
     month: "long",
     year: "numeric",
@@ -178,7 +195,27 @@ export default function DashboardPage() {
           <h1 className="text-xl font-bold text-gray-900 capitalize">{monthName}</h1>
           <p className="text-sm text-gray-500">Dashboard de gastos</p>
         </div>
-        <SyncButton onSync={handleSync} />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => puedePrev && setMesFiltro(mesesDisponibles[idxMes - 1])}
+              disabled={!puedePrev}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Mes anterior"
+            >
+              ‹
+            </button>
+            <button
+              onClick={() => puedeNext && setMesFiltro(mesesDisponibles[idxMes + 1])}
+              disabled={!puedeNext}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Mes siguiente"
+            >
+              ›
+            </button>
+          </div>
+          <SyncButton onSync={handleSync} />
+        </div>
       </div>
 
       {/* Sin categoría alert */}
