@@ -10,6 +10,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: "📊" },
   { href: "/gastos", label: "Gastos", icon: "💸" },
   { href: "/presupuestos", label: "Presupuestos", icon: "📋" },
+  { href: "/importar", label: "Importar", icon: "📧" },
   { href: "/configuracion", label: "Config", icon: "⚙️" },
 ];
 

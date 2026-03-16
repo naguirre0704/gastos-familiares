@@ -1,11 +1,20 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 export default function ConfiguracionPage() {
   const { data: session } = useSession();
+  const router = useRouter();
+  const params = useSearchParams();
+  const [gmailError, setGmailError] = useState(false);
+
+  useEffect(() => {
+    if (params.get("gmail") === "error") setGmailError(true);
+  }, [params]);
 
   return (
     <div className="space-y-5">
@@ -32,6 +41,33 @@ export default function ConfiguracionPage() {
             onClick={() => signOut({ callbackUrl: "/login" })}
           >
             Cerrar sesión
+          </Button>
+        </div>
+      </Card>
+
+      {/* Gmail */}
+      <Card>
+        <h2 className="text-sm font-bold text-gray-700 mb-4">Sincronización Gmail</h2>
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">📧</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800">Banco de Chile</p>
+            <p className="text-xs text-gray-500">
+              Importa los cargos de <span className="font-mono">enviodigital@bancochile.cl</span> de todo el 2026
+            </p>
+          </div>
+        </div>
+        {gmailError && (
+          <p className="mt-3 text-xs text-red-500">
+            Error al conectar con Google. Revisa tus credenciales e intenta de nuevo.
+          </p>
+        )}
+        <div className="mt-4 flex gap-2">
+          <Button size="sm" variant="secondary" onClick={() => router.push("/api/gmail/auth")}>
+            Conectar Gmail
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => router.push("/importar")}>
+            Ir a importar
           </Button>
         </div>
       </Card>
