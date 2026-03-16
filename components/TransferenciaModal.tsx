@@ -3,28 +3,32 @@
 import { useState, useEffect } from "react";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
+import { Categoria } from "@/types";
 
 interface TransferenciaGasto {
   id: string;
   emoji?: string;
   comercio: string;
   monto: number;
+  categoria: string;
   comentario?: string;
 }
 
 interface TransferenciaModalProps {
   gasto: TransferenciaGasto | null;
+  categorias: Categoria[];
   onConfirm: (
     id: string,
-    fields: { emoji?: string; comercio: string; monto: number; comentario?: string }
+    fields: { emoji?: string; comercio: string; monto: number; categoria: string; comentario?: string }
   ) => Promise<void>;
   onClose: () => void;
 }
 
-export function TransferenciaModal({ gasto, onConfirm, onClose }: TransferenciaModalProps) {
+export function TransferenciaModal({ gasto, categorias, onConfirm, onClose }: TransferenciaModalProps) {
   const [emoji, setEmoji] = useState("");
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
+  const [categoria, setCategoria] = useState("");
   const [comentario, setComentario] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -33,6 +37,7 @@ export function TransferenciaModal({ gasto, onConfirm, onClose }: TransferenciaM
       setEmoji(gasto.emoji || "");
       setNombre(gasto.comercio);
       setMonto(String(gasto.monto));
+      setCategoria(gasto.categoria || "");
       setComentario(gasto.comentario || "");
     }
   }, [gasto?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -42,6 +47,8 @@ export function TransferenciaModal({ gasto, onConfirm, onClose }: TransferenciaM
   const montoNum = parseInt(monto.replace(/\./g, ""), 10);
   const canSave = nombre.trim().length > 0 && !isNaN(montoNum) && montoNum > 0;
 
+  const activeCats = categorias.filter((c) => c.activa);
+
   async function handleConfirm() {
     if (!canSave || !gasto) return;
     setLoading(true);
@@ -50,6 +57,7 @@ export function TransferenciaModal({ gasto, onConfirm, onClose }: TransferenciaM
         emoji: emoji.trim() || undefined,
         comercio: nombre.trim(),
         monto: montoNum,
+        categoria,
         comentario: comentario.trim() || undefined,
       });
     } finally {
@@ -69,9 +77,8 @@ export function TransferenciaModal({ gasto, onConfirm, onClose }: TransferenciaM
               type="text"
               value={emoji}
               onChange={(e) => {
-                // Keep only the last character typed (emoji or symbol)
                 const val = e.target.value;
-                const chars = [...val]; // spread handles multi-byte emoji
+                const chars = [...val];
                 setEmoji(chars[chars.length - 1] ?? "");
               }}
               placeholder="💸"
@@ -105,6 +112,30 @@ export function TransferenciaModal({ gasto, onConfirm, onClose }: TransferenciaM
             />
           </div>
         </div>
+
+        {/* Categoría */}
+        {activeCats.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Categoría</label>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+              {activeCats.map((cat) => (
+                <button
+                  key={cat.nombre}
+                  type="button"
+                  onClick={() => setCategoria(cat.nombre)}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-all ${
+                    categoria === cat.nombre
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  <span className="text-xl">{cat.emoji}</span>
+                  <span className="text-sm font-medium text-gray-800">{cat.nombre}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Comentario */}
         <div>

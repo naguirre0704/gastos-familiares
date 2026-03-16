@@ -70,7 +70,7 @@ export default function GastosPage() {
 
   async function handleConfirmTransferencia(
     id: string,
-    fields: { emoji?: string; comercio: string; monto: number; comentario?: string }
+    fields: { emoji?: string; comercio: string; monto: number; categoria: string; comentario?: string }
   ) {
     await fetch("/api/gastos", {
       method: "PATCH",
@@ -202,10 +202,12 @@ export default function GastosPage() {
                 emoji: editingTransferencia.emoji,
                 comercio: editingTransferencia.comercio,
                 monto: editingTransferencia.monto,
+                categoria: editingTransferencia.categoria,
                 comentario: editingTransferencia.comentario,
               }
             : null
         }
+        categorias={categorias}
         onConfirm={handleConfirmTransferencia}
         onClose={() => setEditingGasto(null)}
       />
