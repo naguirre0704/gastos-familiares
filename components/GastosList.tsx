@@ -26,6 +26,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
     <div className="divide-y divide-gray-50">
       {gastos.map((gasto) => {
         const cat = catMap[gasto.categoria];
+        const esTransferencia = gasto.tipo === "transferencia";
         return (
           <div
             key={gasto.id}
@@ -36,10 +37,17 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
                 style={{ backgroundColor: `${cat?.color || "#6B7280"}20` }}
               >
-                {cat?.emoji || "📦"}
+                {esTransferencia && !cat ? "💸" : cat?.emoji || "📦"}
               </div>
               <div className="min-w-0">
-                <p className="font-medium text-gray-900 text-sm truncate">{gasto.comercio}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-medium text-gray-900 text-sm truncate">{gasto.comercio}</p>
+                  {esTransferencia && (
+                    <span className="text-[10px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1 py-0.5 flex-shrink-0">
+                      Transferencia
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs text-gray-400">{gasto.fecha}</span>
                   {gasto.categoria ? (
@@ -52,6 +60,11 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
                     <Badge label="Sin categoría" color="#EF4444" />
                   )}
                 </div>
+                {gasto.comentario && (
+                  <p className="text-xs text-gray-400 mt-0.5 truncate italic">
+                    {gasto.comentario}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 ml-3">
@@ -62,7 +75,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
                 <button
                   onClick={() => onEditCategoria(gasto)}
                   className="text-gray-300 hover:text-blue-500 transition-colors p-1 rounded"
-                  title="Cambiar categoría"
+                  title="Cambiar categoría / comentario"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

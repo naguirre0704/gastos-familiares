@@ -67,7 +67,8 @@ export default function GastosPage() {
   async function handleConfirmEdit(
     _: unknown,
     categoria: string,
-    recordar: boolean
+    recordar: boolean,
+    comentario: string
   ) {
     if (!editingGasto) return;
     await fetch("/api/gastos", {
@@ -76,6 +77,7 @@ export default function GastosPage() {
       body: JSON.stringify({
         id: editingGasto.id,
         categoria,
+        comentario: comentario || undefined,
         comercio: editingGasto.comercio,
         fecha: editingGasto.fecha,
         recordarComercio: recordar,
@@ -166,6 +168,7 @@ export default function GastosPage() {
                 fecha: editingGasto.fecha,
                 hora: editingGasto.hora,
                 cuenta: editingGasto.cuenta,
+                comentario: editingGasto.comentario,
               }
             : null
         }

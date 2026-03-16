@@ -104,6 +104,8 @@ export interface GastoParseado {
   hora: string;   // HH:MM
   monto: number;
   comercio: string;
+  comentario?: string;
+  tipo?: "compra" | "transferencia";
 }
 
 function parseMonto(text: string): number | null {
@@ -182,6 +184,56 @@ function parseEmail(id: string, payload: any): GastoParseado | null {
   };
 }
 
+// ── Banco de Chile "Transferencia a terceros" parser ──────────────────────────
+
+const MESES_ES: Record<string, string> = {
+  enero: "01", febrero: "02", marzo: "03", abril: "04",
+  mayo: "05", junio: "06", julio: "07", agosto: "08",
+  septiembre: "09", octubre: "10", noviembre: "11", diciembre: "12",
+};
+
+function parseSpanishDate(text: string): { fecha: string; hora: string } | null {
+  // "viernes 13 de marzo de 2026 09:00"
+  const m = text.match(/(\d{1,2}) de (\w+) de (\d{4})\s+(\d{2}:\d{2})/i);
+  if (!m) return null;
+  const mes = MESES_ES[m[2].toLowerCase()];
+  if (!mes) return null;
+  return { fecha: `${m[1].padStart(2, "0")}/${mes}/${m[3]}`, hora: m[4] };
+}
+
+function parseTransferencia(id: string, payload: unknown): GastoParseado | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body = extractPlainText(payload as any);
+  if (!body) return null;
+
+  // Destination name: "Nombre y Apellido     Camila Bravo"
+  const nombreM = body.match(/Nombre y Apellido\s+(.+)/i);
+  if (!nombreM) return null;
+  const destino = nombreM[1].trim().split(/\r?\n/)[0].trim();
+
+  // Amount — reuse parseMonto (matches "Monto   $10.000")
+  const monto = parseMonto(body);
+  if (!monto) return null;
+
+  // Date — Spanish format
+  const fechaHora = parseSpanishDate(body);
+  if (!fechaHora) return null;
+
+  // Optional message between "Mensaje" section and "Fecha y Hora:"
+  const mensajeM = body.match(/Mensaje\s*[\r\n]+([\s\S]*?)(?=Fecha y Hora:|Transacci[oó]n)/i);
+  const comentario = mensajeM ? mensajeM[1].trim() : "";
+
+  return {
+    gmailId: id,
+    fecha: fechaHora.fecha,
+    hora: fechaHora.hora,
+    monto,
+    comercio: destino.toUpperCase(),
+    comentario: comentario || undefined,
+    tipo: "transferencia",
+  };
+}
+
 // ── Main fetcher ──────────────────────────────────────────────────────────────
 
 export async function fetchGastosDeGmail(): Promise<GastoParseado[]> {
@@ -199,9 +251,18 @@ export async function fetchGastosDeGmail(): Promise<GastoParseado[]> {
     maxResults: 500,
   });
 
+  // Also fetch transfer notifications
+  const transferenciaRes = await gmail.users.messages.list({
+    userId: "me",
+    q: `from:serviciodetransferencias@bancochile.cl after:2025/12/31`,
+    maxResults: 500,
+  });
+
   const messages = listRes.data.messages ?? [];
+  const transMessages = transferenciaRes.data.messages ?? [];
   const gastos: GastoParseado[] = [];
 
+  // Parse purchase notifications
   for (const msg of messages) {
     if (!msg.id) continue;
     try {
@@ -210,8 +271,23 @@ export async function fetchGastosDeGmail(): Promise<GastoParseado[]> {
         id: msg.id,
         format: "full",
       });
-
       const parsed = parseEmail(msg.id, detail.data.payload);
+      if (parsed) gastos.push({ ...parsed, tipo: "compra" });
+    } catch {
+      // Skip unreadable messages
+    }
+  }
+
+  // Parse transfer notifications
+  for (const msg of transMessages) {
+    if (!msg.id) continue;
+    try {
+      const detail = await gmail.users.messages.get({
+        userId: "me",
+        id: msg.id,
+        format: "full",
+      });
+      const parsed = parseTransferencia(msg.id, detail.data.payload);
       if (parsed) gastos.push(parsed);
     } catch {
       // Skip unreadable messages

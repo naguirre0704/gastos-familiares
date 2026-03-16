@@ -9,6 +9,8 @@ export interface Gasto {
   gmailId: string;
   creadoPor: string;
   notas: string;
+  comentario?: string;
+  tipo?: "compra" | "transferencia";
 }
 
 export interface Comercio {

@@ -56,6 +56,18 @@ export async function updateGastoCategoria(gastoId: string, nuevaCategoria: stri
   }
 }
 
+export async function patchGasto(
+  gastoId: string,
+  fields: Partial<Pick<import("@/types").Gasto, "categoria" | "comentario">>
+): Promise<void> {
+  const gastos = await getGastos();
+  const idx = gastos.findIndex((g) => g.id === gastoId);
+  if (idx !== -1) {
+    Object.assign(gastos[idx], fields);
+    await writeJson("gastos.json", gastos);
+  }
+}
+
 // ─── COMERCIOS ───────────────────────────────────────────────────────────────
 
 export async function getComercios(): Promise<Comercio[]> {

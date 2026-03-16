@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { Categoria } from "@/types";
@@ -13,12 +13,13 @@ interface PendingGasto {
   fecha: string;
   hora: string;
   cuenta: string;
+  comentario?: string;
 }
 
 interface CategoryModalProps {
   gasto: PendingGasto | null;
   categorias: Categoria[];
-  onConfirm: (gasto: PendingGasto, categoria: string, recordar: boolean) => Promise<void>;
+  onConfirm: (gasto: PendingGasto, categoria: string, recordar: boolean, comentario: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -30,7 +31,17 @@ export function CategoryModal({
 }: CategoryModalProps) {
   const [selected, setSelected] = useState<string>("");
   const [recordar, setRecordar] = useState(true);
+  const [comentario, setComentario] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Reset state whenever the gasto changes
+  useEffect(() => {
+    if (gasto) {
+      setSelected("");
+      setRecordar(true);
+      setComentario(gasto.comentario || "");
+    }
+  }, [gasto?.gmailId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!gasto) return null;
 
@@ -40,9 +51,7 @@ export function CategoryModal({
     if (!selected || !gasto) return;
     setLoading(true);
     try {
-      await onConfirm(gasto, selected, recordar);
-      setSelected("");
-      setRecordar(true);
+      await onConfirm(gasto, selected, recordar, comentario);
     } finally {
       setLoading(false);
     }
@@ -78,6 +87,20 @@ export function CategoryModal({
               <span className="text-sm font-medium text-gray-800">{cat.nombre}</span>
             </button>
           ))}
+        </div>
+
+        {/* Comment field */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Comentario <span className="font-normal text-gray-400">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={comentario}
+            onChange={(e) => setComentario(e.target.value)}
+            placeholder="Ej: pago arriendo, compra semanal…"
+            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"
+          />
         </div>
 
         {/* Remember toggle */}

@@ -14,11 +14,14 @@ interface GastoPendiente {
   monto: number;
   comercio: string;
   categoriaSugerida: string;
+  comentario?: string;
+  tipo?: "compra" | "transferencia";
 }
 
 interface FilaState {
   seleccionado: boolean;
   categoria: string;
+  comentario: string;
 }
 
 type Estado = "loading" | "needsAuth" | "empty" | "ready" | "importing" | "done" | "error";
@@ -74,6 +77,7 @@ export default function ImportarPage() {
         init[g.gmailId] = {
           seleccionado: true,
           categoria: g.categoriaSugerida || "",
+          comentario: g.comentario || "",
         };
       }
       setFilas(init);
@@ -95,6 +99,10 @@ export default function ImportarPage() {
 
   function setCategoria(id: string, cat: string) {
     setFilas((prev) => ({ ...prev, [id]: { ...prev[id], categoria: cat } }));
+  }
+
+  function setComentario(id: string, text: string) {
+    setFilas((prev) => ({ ...prev, [id]: { ...prev[id], comentario: text } }));
   }
 
   function toggleAll(val: boolean) {
@@ -121,6 +129,8 @@ export default function ImportarPage() {
       monto: g.monto,
       comercio: g.comercio,
       categoria: filas[g.gmailId].categoria,
+      comentario: filas[g.gmailId].comentario || undefined,
+      tipo: g.tipo,
     }));
 
     try {
@@ -302,7 +312,14 @@ export default function ImportarPage() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{g.comercio}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{g.comercio}</p>
+                    {g.tipo === "transferencia" && (
+                      <span className="text-[10px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1 py-0.5 flex-shrink-0">
+                        Transferencia
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-400">{g.hora} hrs</p>
                   {/* Category selector */}
                   <select
@@ -321,6 +338,14 @@ export default function ImportarPage() {
                       </option>
                     ))}
                   </select>
+                  {/* Comment field */}
+                  <input
+                    type="text"
+                    value={fila.comentario}
+                    onChange={(e) => setComentario(g.gmailId, e.target.value)}
+                    placeholder="Comentario opcional…"
+                    className="mt-1 w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"
+                  />
                 </div>
 
                 {/* Amount */}

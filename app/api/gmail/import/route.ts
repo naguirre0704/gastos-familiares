@@ -9,6 +9,8 @@ interface GastoImport {
   monto: number;
   comercio: string;
   categoria: string;
+  comentario?: string;
+  tipo?: "compra" | "transferencia";
 }
 
 export async function POST(req: NextRequest) {
@@ -30,6 +32,8 @@ export async function POST(req: NextRequest) {
         gmailId: g.gmailId,
         creadoPor: "gmail",
         notas: "",
+        comentario: g.comentario || undefined,
+        tipo: g.tipo || undefined,
       });
 
       if (g.categoria) {
