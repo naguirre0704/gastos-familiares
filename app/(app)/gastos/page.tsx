@@ -51,13 +51,25 @@ export default function GastosPage() {
 
   const months = getAvailableMonths(gastos);
 
-  const filtered = gastos
+  const SIN_CAT = "__sin_categoria__";
+
+  // Reset "sin categoría" filter if the selected month has none
+  useEffect(() => {
+    if (catFiltro === SIN_CAT) setCatFiltro("");
+  }, [mesFiltro]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const gastosMes = gastos.filter((g) => {
+    const parts = g.fecha?.split("/");
+    if (!parts || parts.length !== 3) return false;
+    return `${parts[2]}-${parts[1]}` === mesFiltro;
+  });
+
+  const sinCategoriaCount = gastosMes.filter((g) => !g.categoria).length;
+
+  const filtered = gastosMes
     .filter((g) => {
-      const parts = g.fecha?.split("/");
-      if (!parts || parts.length !== 3) return false;
-      const gastoMes = `${parts[2]}-${parts[1]}`;
-      if (gastoMes !== mesFiltro) return false;
-      if (catFiltro && g.categoria !== catFiltro) return false;
+      if (catFiltro === SIN_CAT) return !g.categoria;
+      if (catFiltro) return g.categoria === catFiltro;
       return true;
     })
     .sort((a, b) => {
@@ -147,6 +159,9 @@ export default function GastosPage() {
             className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Todas las categorías</option>
+            {sinCategoriaCount > 0 && (
+              <option value={SIN_CAT}>Sin categoría ({sinCategoriaCount})</option>
+            )}
             {categorias
               .filter((c) => c.activa)
               .map((c) => (
