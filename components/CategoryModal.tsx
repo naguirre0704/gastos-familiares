@@ -23,6 +23,16 @@ interface CategoryModalProps {
   onClose: () => void;
 }
 
+// DD/MM/YYYY  ↔  YYYY-MM-DD
+function toInputDate(dmy: string): string {
+  const [dd, mm, yyyy] = dmy.split("/");
+  return dd && mm && yyyy ? `${yyyy}-${mm}-${dd}` : "";
+}
+function fromInputDate(ymd: string): string {
+  const [yyyy, mm, dd] = ymd.split("-");
+  return yyyy && mm && dd ? `${dd}/${mm}/${yyyy}` : "";
+}
+
 export function CategoryModal({
   gasto,
   categorias,
@@ -32,6 +42,7 @@ export function CategoryModal({
   const [selected, setSelected] = useState<string>("");
   const [recordar, setRecordar] = useState(true);
   const [comentario, setComentario] = useState("");
+  const [fecha, setFecha] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Reset state whenever the gasto changes
@@ -40,6 +51,7 @@ export function CategoryModal({
       setSelected("");
       setRecordar(true);
       setComentario(gasto.comentario || "");
+      setFecha(toInputDate(gasto.fecha));
     }
   }, [gasto?.gmailId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -51,7 +63,8 @@ export function CategoryModal({
     if (!selected || !gasto) return;
     setLoading(true);
     try {
-      await onConfirm(gasto, selected, recordar, comentario);
+      const fechaDMY = fromInputDate(fecha) || gasto.fecha;
+      await onConfirm({ ...gasto, fecha: fechaDMY }, selected, recordar, comentario);
     } finally {
       setLoading(false);
     }
@@ -87,6 +100,17 @@ export function CategoryModal({
               <span className="text-sm font-medium text-gray-800">{cat.nombre}</span>
             </button>
           ))}
+        </div>
+
+        {/* Fecha */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {/* Comment field */}

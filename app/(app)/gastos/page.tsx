@@ -84,7 +84,7 @@ export default function GastosPage() {
 
   async function handleConfirmTransferencia(
     id: string,
-    fields: { emoji?: string; comercio: string; monto: number; categoria: string; comentario?: string }
+    fields: { fecha: string; emoji?: string; comercio: string; monto: number; categoria: string; comentario?: string }
   ) {
     await fetch("/api/gastos", {
       method: "PATCH",
@@ -96,7 +96,7 @@ export default function GastosPage() {
   }
 
   async function handleConfirmEdit(
-    _: unknown,
+    pendingGasto: { fecha: string },
     categoria: string,
     recordar: boolean,
     comentario: string
@@ -110,7 +110,7 @@ export default function GastosPage() {
         categoria,
         comentario: comentario || undefined,
         comercio: editingGasto.comercio,
-        fecha: editingGasto.fecha,
+        fecha: pendingGasto.fecha,
         recordarComercio: recordar,
       }),
     });
@@ -216,6 +216,7 @@ export default function GastosPage() {
           editingTransferencia
             ? {
                 id: editingTransferencia.id,
+                fecha: editingTransferencia.fecha,
                 emoji: editingTransferencia.emoji,
                 comercio: editingTransferencia.comercio,
                 monto: editingTransferencia.monto,

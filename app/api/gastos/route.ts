@@ -27,7 +27,7 @@ const PatchSchema = z.object({
   comercio:        z.string().min(1).max(200).optional(),
   monto:           z.number().int().positive().optional(),
   recordarComercio: z.boolean().default(true),
-  fecha:           z.string().optional(),
+  fecha:           z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/).optional(),
 });
 
 export async function GET() {
@@ -75,6 +75,7 @@ export async function PATCH(req: NextRequest) {
     if (body.emoji      !== undefined) fields.emoji      = body.emoji;
     if (body.comercio   !== undefined) fields.comercio   = body.comercio;
     if (body.monto      !== undefined) fields.monto      = body.monto;
+    if (body.fecha      !== undefined) fields.fecha      = body.fecha;
     await patchGasto(body.id, fields);
     if (body.recordarComercio && body.comercio && body.categoria) {
       await upsertComercio(body.comercio, body.categoria, body.fecha ?? "");
