@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import {
   getGastos,
   appendGasto,
@@ -8,11 +7,7 @@ import {
 } from "@/lib/storage";
 import { v4 as uuidv4 } from "uuid";
 
-export async function GET(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET() {
   try {
     const gastos = await getGastos();
     return NextResponse.json({ gastos });
@@ -23,10 +18,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
   try {
     const body = await req.json();
     const gasto = {
@@ -38,7 +29,7 @@ export async function POST(req: NextRequest) {
       categoria: body.categoria,
       cuenta: body.cuenta || "",
       gmailId: body.gmailId || "",
-      creadoPor: String(token.name || token.sub || ""),
+      creadoPor: body.creadoPor || "",
       notas: body.notas || "",
     };
     await appendGasto(gasto);
@@ -53,10 +44,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
   try {
     const body = await req.json();
     await updateGastoCategoria(body.id, body.categoria);
