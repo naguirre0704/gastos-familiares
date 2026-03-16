@@ -107,8 +107,9 @@ export interface GastoParseado {
 }
 
 function parseMonto(text: string): number | null {
-  // Patterns: "Monto del Cargo: $25.990", "Monto: $ 1.234.567", "$25.990"
+  // Patterns: "compra por $3.100", "Monto del Cargo: $25.990", "Monto: $ 1.234.567", "$25.990"
   const patterns = [
+    /compra por\s*\$\s*([\d.]+)/i,
     /monto[^:]*:\s*\$\s*([\d.]+)/i,
     /cargo[^:$]*:\s*\$\s*([\d.]+)/i,
     /\$\s*([\d.]+)/,
@@ -127,6 +128,8 @@ function parseMonto(text: string): number | null {
 
 function parseComercioParts(text: string): string | null {
   const patterns = [
+    // "en FRUTAS CARLOS DIA el 15/03/2026" — Banco de Chile inline format
+    /\ben ([A-Z0-9][^\n]+?) el \d{2}\/\d{2}\/\d{4}/,
     /Comercio[:\s]+(.+)/i,
     /Establecimiento[:\s]+(.+)/i,
     /Nombre del[^:]+:[:\s]+(.+)/i,
@@ -187,8 +190,8 @@ export async function fetchGastosDeGmail(): Promise<GastoParseado[]> {
 
   const gmail = google.gmail({ version: "v1", auth });
 
-  // All "Cargo en Cuenta" from Banco de Chile in 2026
-  const query = `from:enviodigital@bancochile.cl subject:"Cargo en Cuenta" after:2025/12/31`;
+  // Banco de Chile purchase notifications in 2026
+  const query = `from:enviodigital@bancochile.cl after:2025/12/31`;
 
   const listRes = await gmail.users.messages.list({
     userId: "me",
