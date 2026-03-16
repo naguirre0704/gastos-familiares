@@ -58,7 +58,7 @@ export async function updateGastoCategoria(gastoId: string, nuevaCategoria: stri
 
 export async function patchGasto(
   gastoId: string,
-  fields: Partial<Pick<import("@/types").Gasto, "categoria" | "comentario">>
+  fields: Partial<Pick<import("@/types").Gasto, "categoria" | "comentario" | "emoji" | "comercio" | "monto">>
 ): Promise<void> {
   const gastos = await getGastos();
   const idx = gastos.findIndex((g) => g.id === gastoId);

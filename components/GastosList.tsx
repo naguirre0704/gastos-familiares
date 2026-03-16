@@ -37,7 +37,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
                 style={{ backgroundColor: `${cat?.color || "#6B7280"}20` }}
               >
-                {esTransferencia && !cat ? "💸" : cat?.emoji || "📦"}
+                {gasto.emoji || (esTransferencia ? "💸" : cat?.emoji || "📦")}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">

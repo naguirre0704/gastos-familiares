@@ -11,6 +11,7 @@ export interface Gasto {
   notas: string;
   comentario?: string;
   tipo?: "compra" | "transferencia";
+  emoji?: string;
 }
 
 export interface Comercio {

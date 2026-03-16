@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/Card";
 import { GastosList } from "@/components/GastosList";
 import { CategoryModal } from "@/components/CategoryModal";
+import { TransferenciaModal } from "@/components/TransferenciaModal";
 import { Gasto, Categoria } from "@/types";
 
 function getMesActual() {
@@ -29,6 +30,9 @@ export default function GastosPage() {
   const [mesFiltro, setMesFiltro] = useState(getMesActual());
   const [catFiltro, setCatFiltro] = useState("");
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+
+  const editingTransferencia = editingGasto?.tipo === "transferencia" ? editingGasto : null;
+  const editingCompra = editingGasto?.tipo !== "transferencia" ? editingGasto : null;
 
   const fetchData = useCallback(async () => {
     const [gastosRes, catsRes] = await Promise.all([
@@ -63,6 +67,19 @@ export default function GastosPage() {
     });
 
   const totalFiltrado = filtered.reduce((s, g) => s + g.monto, 0);
+
+  async function handleConfirmTransferencia(
+    id: string,
+    fields: { emoji?: string; comercio: string; monto: number; comentario?: string }
+  ) {
+    await fetch("/api/gastos", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...fields }),
+    });
+    await fetchData();
+    setEditingGasto(null);
+  }
 
   async function handleConfirmEdit(
     _: unknown,
@@ -160,20 +177,36 @@ export default function GastosPage() {
 
       <CategoryModal
         gasto={
-          editingGasto
+          editingCompra
             ? {
-                gmailId: editingGasto.gmailId,
-                monto: editingGasto.monto,
-                comercio: editingGasto.comercio,
-                fecha: editingGasto.fecha,
-                hora: editingGasto.hora,
-                cuenta: editingGasto.cuenta,
-                comentario: editingGasto.comentario,
+                gmailId: editingCompra.gmailId,
+                monto: editingCompra.monto,
+                comercio: editingCompra.comercio,
+                fecha: editingCompra.fecha,
+                hora: editingCompra.hora,
+                cuenta: editingCompra.cuenta,
+                comentario: editingCompra.comentario,
               }
             : null
         }
         categorias={categorias}
         onConfirm={handleConfirmEdit}
+        onClose={() => setEditingGasto(null)}
+      />
+
+      <TransferenciaModal
+        gasto={
+          editingTransferencia
+            ? {
+                id: editingTransferencia.id,
+                emoji: editingTransferencia.emoji,
+                comercio: editingTransferencia.comercio,
+                monto: editingTransferencia.monto,
+                comentario: editingTransferencia.comentario,
+              }
+            : null
+        }
+        onConfirm={handleConfirmTransferencia}
         onClose={() => setEditingGasto(null)}
       />
     </div>

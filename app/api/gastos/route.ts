@@ -52,6 +52,9 @@ export async function PATCH(req: NextRequest) {
     const fields: any = {};
     if (body.categoria !== undefined) fields.categoria = body.categoria;
     if (body.comentario !== undefined) fields.comentario = body.comentario;
+    if (body.emoji !== undefined) fields.emoji = body.emoji;
+    if (body.comercio !== undefined) fields.comercio = body.comercio;
+    if (body.monto !== undefined) fields.monto = body.monto;
     await patchGasto(body.id, fields);
     if (body.recordarComercio !== false && body.comercio && body.categoria) {
       await upsertComercio(body.comercio, body.categoria, body.fecha || "");
