@@ -1,7 +1,43 @@
 import { google } from "googleapis";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { getSupabase } from "./supabase";
 
 const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
+
+// ── Token encryption (VULN-11) ────────────────────────────────────────────────
+// GMAIL_TOKEN_KEY must be a 64-char hex string (32 bytes).
+// Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+function getEncryptionKey(): Buffer {
+  const hex = process.env.GMAIL_TOKEN_KEY;
+  if (!hex || hex.length !== 64) {
+    throw new Error("GMAIL_TOKEN_KEY must be a 64-char hex string");
+  }
+  return Buffer.from(hex, "hex");
+}
+
+function encryptTokens(tokens: Record<string, unknown>): string {
+  const key = getEncryptionKey();
+  const iv = randomBytes(12); // 96-bit IV for GCM
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const json = JSON.stringify(tokens);
+  const encrypted = Buffer.concat([cipher.update(json, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  // Format: iv(12) + tag(16) + ciphertext — base64 encoded
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
+}
+
+function decryptTokens(data: string): Record<string, unknown> {
+  const key = getEncryptionKey();
+  const buf = Buffer.from(data, "base64");
+  const iv = buf.subarray(0, 12);
+  const tag = buf.subarray(12, 28);
+  const ciphertext = buf.subarray(28);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  const json = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
+  return JSON.parse(json) as Record<string, unknown>;
+}
 
 // ── OAuth client ─────────────────────────────────────────────────────────────
 
@@ -13,21 +49,29 @@ export function getOAuth2Client() {
   );
 }
 
-export function getAuthUrl() {
+export function generateOAuthState(): string {
+  return crypto.randomUUID();
+}
+
+export function getAuthUrl(state: string) {
   const auth = getOAuth2Client();
   return auth.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES,
     prompt: "consent",
+    state,
   });
 }
 
 // ── Token storage (Supabase) ──────────────────────────────────────────────────
+// VULN-11: Tokens are encrypted with AES-256-GCM before being stored.
+// The encrypted blob is stored as a JSON string `{ "enc": "<base64>" }`.
 
 export async function saveTokens(tokens: Record<string, unknown>) {
+  const encrypted = encryptTokens(tokens);
   const { error } = await getSupabase()
     .from("gmail_tokens")
-    .upsert({ id: 1, tokens }, { onConflict: "id" });
+    .upsert({ id: 1, tokens: { enc: encrypted } }, { onConflict: "id" });
   if (error) throw error;
 }
 
@@ -37,7 +81,13 @@ export async function loadTokens(): Promise<Record<string, unknown> | null> {
     .select("tokens")
     .eq("id", 1)
     .single();
-  return (data?.tokens as Record<string, unknown>) ?? null;
+  if (!data?.tokens) return null;
+  const raw = data.tokens as Record<string, unknown>;
+  // Handle both encrypted and legacy plaintext tokens during migration
+  if (typeof raw.enc === "string") {
+    return decryptTokens(raw.enc);
+  }
+  return raw;
 }
 
 export async function isGmailConnected(): Promise<boolean> {

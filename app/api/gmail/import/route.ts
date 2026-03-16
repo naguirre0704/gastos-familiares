@@ -1,24 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { appendGasto, upsertComercio, appendImportacion } from "@/lib/storage";
+import { apiError } from "@/lib/api";
 import { v4 as uuid } from "uuid";
 
-interface GastoImport {
-  gmailId: string;
-  fecha: string;
-  hora: string;
-  monto: number;
-  comercio: string;
-  categoria: string;
-  comentario?: string;
-  tipo?: "compra" | "transferencia";
-}
+const GastoImportSchema = z.object({
+  gmailId:    z.string().min(1).max(200),
+  fecha:      z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/),
+  hora:       z.string().max(10),
+  monto:      z.number().int().positive(),
+  comercio:   z.string().min(1).max(200),
+  categoria:  z.string().max(100).default(""),
+  comentario: z.string().max(500).optional(),
+  tipo:       z.enum(["compra", "transferencia"]).optional(),
+});
+
+const BodySchema = z.object({
+  gastos:    z.array(GastoImportSchema).min(1).max(500), // VULN-17: max 500 items
+  desdeDate: z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/).optional(),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { gastos, desdeDate }: { gastos: GastoImport[]; desdeDate?: string } = await req.json();
-    if (!Array.isArray(gastos) || gastos.length === 0) {
-      return NextResponse.json({ error: "Sin gastos para importar" }, { status: 400 });
-    }
+    const { gastos, desdeDate } = BodySchema.parse(await req.json());
 
     for (const g of gastos) {
       await appendGasto({
@@ -50,7 +54,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ imported: gastos.length });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(error);
   }
 }

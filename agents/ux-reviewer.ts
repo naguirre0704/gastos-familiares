@@ -72,7 +72,16 @@ Al final, un resumen con el estado general y los 3 cambios más prioritarios.
 `;
 
 async function main() {
-  const targetPath = process.argv[2] ?? ".";
+  const rawArg = process.argv[2] ?? ".";
+
+  // VULN-12: Validate targetPath to prevent prompt injection via CLI argument
+  const VALID_PATH = /^[\w./-]+\.(tsx|ts)$/;
+  if (rawArg !== "." && !VALID_PATH.test(rawArg)) {
+    console.error("Error: ruta de archivo inválida.");
+    process.exit(1);
+  }
+
+  const targetPath = rawArg;
   const isSpecificFile = targetPath.endsWith(".tsx") || targetPath.endsWith(".ts");
 
   const prompt = isSpecificFile
