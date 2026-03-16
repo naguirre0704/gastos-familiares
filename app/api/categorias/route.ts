@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCategorias, updateCategoria, appendCategoria } from "@/lib/storage";
+import { getCategorias, updateCategoria, appendCategoria, renameCategoria, deleteCategoria } from "@/lib/storage";
 
 export async function GET() {
   try {
@@ -30,7 +30,22 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    await updateCategoria(body.nombre, body.presupuesto);
+    if (body.nuevoNombre) {
+      await renameCategoria(body.nombre, body.nuevoNombre);
+    } else {
+      await updateCategoria(body.nombre, body.presupuesto);
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    await deleteCategoria(body.nombre);
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

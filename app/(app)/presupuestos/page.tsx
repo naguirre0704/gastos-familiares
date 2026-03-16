@@ -24,14 +24,28 @@ export default function PresupuestosPage() {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit budget state
   const [editingNombre, setEditingNombre] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Rename state
+  const [renamingNombre, setRenamingNombre] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renaming, setRenaming] = useState(false);
+
+  // Delete state
+  const [deletingNombre, setDeletingNombre] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // New category modal
   const [showModal, setShowModal] = useState(false);
   const [newNombre, setNewNombre] = useState("");
   const [newMonto, setNewMonto] = useState("");
   const [savingNew, setSavingNew] = useState(false);
   const [errorNew, setErrorNew] = useState("");
+
   const mes = getMesActual();
 
   const fetchData = useCallback(async () => {
@@ -46,9 +60,7 @@ export default function PresupuestosPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const gastosDelMes = gastos.filter((g) => {
     const parts = g.fecha?.split("/");
@@ -79,38 +91,64 @@ export default function PresupuestosPage() {
     }
   }
 
+  async function handleRename(nombreViejo: string) {
+    const nuevoNombre = renameValue.trim();
+    if (!nuevoNombre || nuevoNombre === nombreViejo) {
+      setRenamingNombre(null);
+      setRenameValue("");
+      return;
+    }
+    if (categorias.some((c) => c.nombre.toLowerCase() === nuevoNombre.toLowerCase() && c.nombre !== nombreViejo)) {
+      return;
+    }
+    setRenaming(true);
+    try {
+      await fetch("/api/categorias", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: nombreViejo, nuevoNombre }),
+      });
+      await fetchData();
+    } finally {
+      setRenaming(false);
+      setRenamingNombre(null);
+      setRenameValue("");
+    }
+  }
+
+  async function handleDelete(nombre: string) {
+    setDeleting(true);
+    try {
+      await fetch("/api/categorias", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre }),
+      });
+      await fetchData();
+    } finally {
+      setDeleting(false);
+      setDeletingNombre(null);
+    }
+  }
+
   async function handleCrearPresupuesto() {
     const nombre = newNombre.trim();
     const monto = parseInt(newMonto.replace(/\D/g, ""), 10);
-
-    if (!nombre) {
-      setErrorNew("Ingresa un nombre de categoría.");
-      return;
-    }
-    if (isNaN(monto) || monto <= 0) {
-      setErrorNew("Ingresa un monto válido.");
-      return;
-    }
+    if (!nombre) { setErrorNew("Ingresa un nombre de categoría."); return; }
+    if (isNaN(monto) || monto <= 0) { setErrorNew("Ingresa un monto válido."); return; }
     if (categorias.some((c) => c.nombre.toLowerCase() === nombre.toLowerCase())) {
       setErrorNew("Ya existe una categoría con ese nombre.");
       return;
     }
-
     setSavingNew(true);
     setErrorNew("");
     try {
       const colorIdx = categorias.length % COLORES_DEFAULT.length;
       const emojiIdx = categorias.length % EMOJIS_DEFAULT.length;
-
       await fetch("/api/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre,
-          emoji: EMOJIS_DEFAULT[emojiIdx],
-          color: COLORES_DEFAULT[colorIdx],
-          presupuestoMensual: monto,
-        }),
+        body: JSON.stringify({ nombre, emoji: EMOJIS_DEFAULT[emojiIdx], color: COLORES_DEFAULT[colorIdx], presupuestoMensual: monto }),
       });
       await fetch("/api/presupuestos", {
         method: "POST",
@@ -142,14 +180,8 @@ export default function PresupuestosPage() {
   }
 
   const [year, month] = mes.split("-");
-  const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString("es-CL", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const totalPresupuestado = categorias
-    .filter((c) => c.activa)
-    .reduce((s, c) => s + c.presupuestoMensual, 0);
+  const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString("es-CL", { month: "long", year: "numeric" });
+  const totalPresupuestado = categorias.filter((c) => c.activa).reduce((s, c) => s + c.presupuestoMensual, 0);
   const totalGastado = gastosDelMes.reduce((s, g) => s + g.monto, 0);
 
   return (
@@ -189,78 +221,131 @@ export default function PresupuestosPage() {
             const gastado = gastosDelMes
               .filter((g) => g.categoria === cat.nombre)
               .reduce((s, g) => s + g.monto, 0);
-            const porcentaje =
-              cat.presupuestoMensual > 0
-                ? Math.round((gastado / cat.presupuestoMensual) * 100)
-                : 0;
+            const porcentaje = cat.presupuestoMensual > 0
+              ? Math.round((gastado / cat.presupuestoMensual) * 100)
+              : 0;
             const exceeded = porcentaje > 100;
             const isEditing = editingNombre === cat.nombre;
+            const isRenaming = renamingNombre === cat.nombre;
+            const isDeleting = deletingNombre === cat.nombre;
 
             return (
               <Card key={cat.nombre} padding="md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  {/* Left: emoji + name or rename input */}
+                  <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                      className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-xl"
                       style={{ backgroundColor: `${cat.color}20` }}
                     >
                       {cat.emoji}
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{cat.nombre}</p>
-                      <p className="text-xs text-gray-500">
-                        {formatMonedaChile(gastado)} gastado
-                        {gastado > 0 && (
-                          <span
-                            className={`ml-1 font-semibold ${exceeded ? "text-red-500" : "text-gray-400"}`}
-                          >
-                            ({porcentaje}%)
-                          </span>
-                        )}
-                      </p>
-                    </div>
+                    {isRenaming ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          className="w-32 text-sm border border-blue-400 rounded-xl px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename(cat.nombre);
+                            if (e.key === "Escape") { setRenamingNombre(null); setRenameValue(""); }
+                          }}
+                        />
+                        <Button size="sm" onClick={() => handleRename(cat.nombre)} disabled={renaming}>
+                          {renaming ? "..." : "OK"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setRenamingNombre(null); setRenameValue(""); }}>
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{cat.nombre}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatMonedaChile(gastado)} gastado
+                          {gastado > 0 && (
+                            <span className={`ml-1 font-semibold ${exceeded ? "text-red-500" : "text-gray-400"}`}>
+                              ({porcentaje}%)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  {isEditing ? (
-                    <div className="flex items-center gap-2">
+                  {/* Right: budget edit / delete confirm / normal actions */}
+                  {isDeleting ? (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs text-red-600 font-medium whitespace-nowrap">¿Eliminar?</span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleDelete(cat.nombre)}
+                        disabled={deleting}
+                        className="bg-red-600 hover:bg-red-700 text-white text-xs px-2"
+                      >
+                        {deleting ? "..." : "Sí"}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setDeletingNombre(null)}>
+                        No
+                      </Button>
+                    </div>
+                  ) : isEditing ? (
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-sm text-gray-500">$</span>
                       <input
                         type="number"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="w-28 text-sm border border-blue-400 rounded-xl px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-right"
+                        className="w-24 text-sm border border-blue-400 rounded-xl px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-right"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleSave(cat.nombre);
-                          if (e.key === "Escape") {
-                            setEditingNombre(null);
-                            setEditValue("");
-                          }
+                          if (e.key === "Escape") { setEditingNombre(null); setEditValue(""); }
                         }}
                       />
-                      <Button
-                        size="sm"
-                        onClick={() => handleSave(cat.nombre)}
-                        disabled={saving}
-                      >
+                      <Button size="sm" onClick={() => handleSave(cat.nombre)} disabled={saving}>
                         {saving ? "..." : "OK"}
                       </Button>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900 text-sm">
+                  ) : isRenaming ? null : (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="font-bold text-gray-900 text-sm mr-1">
                         {formatMonedaChile(cat.presupuestoMensual)}
                       </span>
+                      {/* Edit budget */}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setEditingNombre(cat.nombre);
-                          setEditValue(String(cat.presupuestoMensual));
-                        }}
+                        title="Editar presupuesto"
+                        onClick={() => { setEditingNombre(cat.nombre); setEditValue(String(cat.presupuestoMensual)); }}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </Button>
+                      {/* Rename */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Renombrar"
+                        onClick={() => { setRenamingNombre(cat.nombre); setRenameValue(cat.nombre); }}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A2 2 0 013 8V5a2 2 0 012-2z" />
+                        </svg>
+                      </Button>
+                      {/* Delete */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Eliminar"
+                        className="text-red-400 hover:text-red-600"
+                        onClick={() => setDeletingNombre(cat.nombre)}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </Button>
                     </div>
@@ -285,9 +370,7 @@ export default function PresupuestosPage() {
       <Modal open={showModal} onClose={handleCloseModal} title="Nuevo presupuesto">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre categoría
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre categoría</label>
             <input
               type="text"
               value={newNombre}
@@ -298,9 +381,7 @@ export default function PresupuestosPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Monto mensual
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Monto mensual</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
               <input
@@ -313,15 +394,9 @@ export default function PresupuestosPage() {
               />
             </div>
           </div>
-
-          {errorNew && (
-            <p className="text-sm text-red-500">{errorNew}</p>
-          )}
-
+          {errorNew && <p className="text-sm text-red-500">{errorNew}</p>}
           <div className="flex gap-2 pt-1">
-            <Button variant="ghost" className="flex-1" onClick={handleCloseModal}>
-              Cancelar
-            </Button>
+            <Button variant="ghost" className="flex-1" onClick={handleCloseModal}>Cancelar</Button>
             <Button className="flex-1" onClick={handleCrearPresupuesto} disabled={savingNew}>
               {savingNew ? "Guardando..." : "Guardar"}
             </Button>

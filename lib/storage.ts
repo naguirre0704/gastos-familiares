@@ -105,6 +105,32 @@ export async function updateCategoria(nombre: string, presupuesto: number): Prom
   }
 }
 
+export async function renameCategoria(nombreViejo: string, nombreNuevo: string): Promise<void> {
+  const cats = await getCategorias();
+  const idx = cats.findIndex((c) => c.nombre === nombreViejo);
+  if (idx !== -1) {
+    cats[idx].nombre = nombreNuevo;
+    await writeJson("categorias.json", cats);
+  }
+  const gastos = await getGastos();
+  await writeJson("gastos.json", gastos.map((g) => g.categoria === nombreViejo ? { ...g, categoria: nombreNuevo } : g));
+  const comercios = await getComercios();
+  await writeJson("comercios.json", comercios.map((c) => c.categoria === nombreViejo ? { ...c, categoria: nombreNuevo } : c));
+  const presupuestos = await getPresupuestos();
+  await writeJson("presupuestos.json", presupuestos.map((p) => p.categoria === nombreViejo ? { ...p, categoria: nombreNuevo } : p));
+}
+
+export async function deleteCategoria(nombre: string): Promise<void> {
+  const cats = await getCategorias();
+  await writeJson("categorias.json", cats.filter((c) => c.nombre !== nombre));
+  const gastos = await getGastos();
+  await writeJson("gastos.json", gastos.map((g) => g.categoria === nombre ? { ...g, categoria: "" } : g));
+  const comercios = await getComercios();
+  await writeJson("comercios.json", comercios.map((c) => c.categoria === nombre ? { ...c, categoria: "" } : c));
+  const presupuestos = await getPresupuestos();
+  await writeJson("presupuestos.json", presupuestos.filter((p) => p.categoria !== nombre));
+}
+
 // ─── PRESUPUESTOS ─────────────────────────────────────────────────────────────
 
 export async function getPresupuestos(): Promise<Presupuesto[]> {
