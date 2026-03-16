@@ -68,6 +68,42 @@ export async function patchGasto(
   }
 }
 
+// ─── AUTO-CATEGORIZACIÓN ─────────────────────────────────────────────────────
+
+/**
+ * Recorre todos los gastos sin categoría y, si el comercio ya aparece en otros
+ * gastos con UNA SOLA categoría consistente, la asigna automáticamente.
+ * Si el mismo comercio tiene categorías distintas en distintos gastos, lo deja
+ * sin categoría para que el usuario lo clasifique manualmente.
+ *
+ * Retorna cuántos gastos fueron categorizados.
+ */
+export async function autoCategorizeGastos(): Promise<number> {
+  const gastos = await getGastos();
+
+  // Mapa comercio (uppercase) -> categorías únicas encontradas en gastos YA categorizados
+  const catsPorComercio = new Map<string, Set<string>>();
+  for (const g of gastos) {
+    if (g.categoria?.trim()) {
+      const key = g.comercio.toUpperCase();
+      if (!catsPorComercio.has(key)) catsPorComercio.set(key, new Set());
+      catsPorComercio.get(key)!.add(g.categoria);
+    }
+  }
+
+  let count = 0;
+  const updated = gastos.map((g) => {
+    if (g.categoria?.trim()) return g; // ya tiene categoría
+    const cats = catsPorComercio.get(g.comercio.toUpperCase());
+    if (!cats || cats.size !== 1) return g; // sin historial o ambiguo
+    count++;
+    return { ...g, categoria: [...cats][0] };
+  });
+
+  if (count > 0) await writeJson("gastos.json", updated);
+  return count;
+}
+
 // ─── COMERCIOS ───────────────────────────────────────────────────────────────
 
 export async function getComercios(): Promise<Comercio[]> {

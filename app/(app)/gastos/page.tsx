@@ -35,6 +35,8 @@ export default function GastosPage() {
   const editingCompra = editingGasto?.tipo !== "transferencia" ? editingGasto : null;
 
   const fetchData = useCallback(async () => {
+    // Auto-categorize first so the fetched list is already up to date
+    await fetch("/api/gastos/auto-categorize", { method: "POST" });
     const [gastosRes, catsRes] = await Promise.all([
       fetch("/api/gastos"),
       fetch("/api/categorias"),
