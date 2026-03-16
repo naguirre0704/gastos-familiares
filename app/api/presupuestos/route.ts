@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getOrCreateSheet, getPresupuestos, upsertPresupuesto } from "@/lib/sheets";
+import { getPresupuestos, upsertPresupuesto } from "@/lib/storage";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.accessToken) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const sheetId = await getOrCreateSheet(session.accessToken);
-    const presupuestos = await getPresupuestos(session.accessToken, sheetId);
+    const presupuestos = await getPresupuestos();
     return NextResponse.json({ presupuestos });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -20,13 +19,12 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.accessToken) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
     const body = await req.json();
-    const sheetId = await getOrCreateSheet(session.accessToken);
-    await upsertPresupuesto(session.accessToken, sheetId, body.mes, body.categoria, body.presupuesto);
+    await upsertPresupuesto(body.mes, body.categoria, body.presupuesto);
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
