@@ -32,9 +32,12 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     if (body.nuevoNombre) {
       await renameCategoria(body.nombre, body.nuevoNombre);
-    } else {
-      await updateCategoria(body.nombre, body.presupuesto);
     }
+    await updateCategoria(
+      body.nuevoNombre ?? body.nombre,
+      body.presupuesto,
+      body.emoji,
+    );
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

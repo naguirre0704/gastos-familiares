@@ -96,11 +96,12 @@ export async function appendCategoria(categoria: Omit<Categoria, "activa">): Pro
   await writeJson("categorias.json", cats);
 }
 
-export async function updateCategoria(nombre: string, presupuesto: number): Promise<void> {
+export async function updateCategoria(nombre: string, presupuesto: number, emoji?: string): Promise<void> {
   const cats = await getCategorias();
   const idx = cats.findIndex((c) => c.nombre === nombre);
   if (idx !== -1) {
     cats[idx].presupuestoMensual = presupuesto;
+    if (emoji) cats[idx].emoji = emoji;
     await writeJson("categorias.json", cats);
   }
 }
