@@ -1,8 +1,6 @@
 import { google } from "googleapis";
-import { promises as fs } from "fs";
-import path from "path";
+import { getSupabase } from "./supabase";
 
-const TOKEN_FILE = path.join(process.cwd(), "data", "gmail-tokens.json");
 const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
 
 // ── OAuth client ─────────────────────────────────────────────────────────────
@@ -24,20 +22,22 @@ export function getAuthUrl() {
   });
 }
 
-// ── Token storage ─────────────────────────────────────────────────────────────
+// ── Token storage (Supabase) ──────────────────────────────────────────────────
 
 export async function saveTokens(tokens: Record<string, unknown>) {
-  await fs.mkdir(path.join(process.cwd(), "data"), { recursive: true });
-  await fs.writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2));
+  const { error } = await getSupabase()
+    .from("gmail_tokens")
+    .upsert({ id: 1, tokens }, { onConflict: "id" });
+  if (error) throw error;
 }
 
 export async function loadTokens(): Promise<Record<string, unknown> | null> {
-  try {
-    const content = await fs.readFile(TOKEN_FILE, "utf-8");
-    return JSON.parse(content);
-  } catch {
-    return null;
-  }
+  const { data } = await getSupabase()
+    .from("gmail_tokens")
+    .select("tokens")
+    .eq("id", 1)
+    .single();
+  return (data?.tokens as Record<string, unknown>) ?? null;
 }
 
 export async function isGmailConnected(): Promise<boolean> {

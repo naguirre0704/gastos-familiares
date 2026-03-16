@@ -1,87 +1,130 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { getSupabase } from "./supabase";
 import { Gasto, Comercio, Categoria, Presupuesto, Importacion } from "@/types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-
 const CATEGORIAS_INICIALES: Categoria[] = [
-  { nombre: "Supermercado", emoji: "🛒", color: "#10B981", presupuestoMensual: 500000, activa: true },
-  { nombre: "Bencina", emoji: "⛽", color: "#F59E0B", presupuestoMensual: 150000, activa: true },
-  { nombre: "Restaurante", emoji: "🍽️", color: "#EF4444", presupuestoMensual: 200000, activa: true },
-  { nombre: "Farmacia", emoji: "💊", color: "#8B5CF6", presupuestoMensual: 80000, activa: true },
+  { nombre: "Supermercado",    emoji: "🛒", color: "#10B981", presupuestoMensual: 500000, activa: true },
+  { nombre: "Bencina",         emoji: "⛽", color: "#F59E0B", presupuestoMensual: 150000, activa: true },
+  { nombre: "Restaurante",     emoji: "🍽️", color: "#EF4444", presupuestoMensual: 200000, activa: true },
+  { nombre: "Farmacia",        emoji: "💊", color: "#8B5CF6", presupuestoMensual: 80000,  activa: true },
   { nombre: "Entretenimiento", emoji: "🎬", color: "#3B82F6", presupuestoMensual: 100000, activa: true },
-  { nombre: "Ropa", emoji: "👕", color: "#EC4899", presupuestoMensual: 100000, activa: true },
-  { nombre: "Educación", emoji: "📚", color: "#06B6D4", presupuestoMensual: 150000, activa: true },
-  { nombre: "Transporte", emoji: "🚗", color: "#84CC16", presupuestoMensual: 80000, activa: true },
-  { nombre: "Hogar", emoji: "🏠", color: "#F97316", presupuestoMensual: 100000, activa: true },
-  { nombre: "Otros", emoji: "📦", color: "#6B7280", presupuestoMensual: 200000, activa: true },
+  { nombre: "Ropa",            emoji: "👕", color: "#EC4899", presupuestoMensual: 100000, activa: true },
+  { nombre: "Educación",       emoji: "📚", color: "#06B6D4", presupuestoMensual: 150000, activa: true },
+  { nombre: "Transporte",      emoji: "🚗", color: "#84CC16", presupuestoMensual: 80000,  activa: true },
+  { nombre: "Hogar",           emoji: "🏠", color: "#F97316", presupuestoMensual: 100000, activa: true },
+  { nombre: "Otros",           emoji: "📦", color: "#6B7280", presupuestoMensual: 200000, activa: true },
 ];
 
-async function ensureDir() {
-  await fs.mkdir(DATA_DIR, { recursive: true });
+// ─── Row mappers ──────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toGasto(r: any): Gasto {
+  return {
+    id: r.id,
+    fecha: r.fecha,
+    hora: r.hora,
+    monto: r.monto,
+    comercio: r.comercio,
+    categoria: r.categoria ?? "",
+    cuenta: r.cuenta ?? "",
+    gmailId: r.gmail_id ?? "",
+    creadoPor: r.creado_por ?? "",
+    notas: r.notas ?? "",
+    comentario: r.comentario ?? undefined,
+    tipo: r.tipo ?? undefined,
+    emoji: r.emoji ?? undefined,
+  };
 }
 
-async function readJson<T>(file: string, defaultVal: T): Promise<T> {
-  try {
-    const content = await fs.readFile(path.join(DATA_DIR, file), "utf-8");
-    return JSON.parse(content) as T;
-  } catch {
-    return defaultVal;
-  }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toComercio(r: any): Comercio {
+  return {
+    comercio: r.comercio,
+    categoria: r.categoria,
+    vecesUsado: r.veces_usado,
+    ultimaVez: r.ultima_vez,
+  };
 }
 
-async function writeJson<T>(file: string, data: T): Promise<void> {
-  await ensureDir();
-  await fs.writeFile(path.join(DATA_DIR, file), JSON.stringify(data, null, 2));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toCategoria(r: any): Categoria {
+  return {
+    nombre: r.nombre,
+    emoji: r.emoji,
+    color: r.color,
+    presupuestoMensual: r.presupuesto_mensual,
+    activa: r.activa,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toPresupuesto(r: any): Presupuesto {
+  return { mes: r.mes, categoria: r.categoria, presupuesto: r.presupuesto };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toImportacion(r: any): Importacion {
+  return {
+    id: r.id,
+    timestamp: r.timestamp,
+    cantidad: r.cantidad,
+    desdeDate: r.desde_date,
+  };
 }
 
 // ─── GASTOS ──────────────────────────────────────────────────────────────────
 
 export async function getGastos(): Promise<Gasto[]> {
-  return readJson<Gasto[]>("gastos.json", []);
+  const { data, error } = await getSupabase().from("gastos").select("*");
+  if (error) throw error;
+  return (data ?? []).map(toGasto);
 }
 
 export async function appendGasto(gasto: Gasto): Promise<void> {
-  const gastos = await getGastos();
-  gastos.push(gasto);
-  await writeJson("gastos.json", gastos);
+  const { error } = await getSupabase().from("gastos").insert({
+    id: gasto.id,
+    fecha: gasto.fecha,
+    hora: gasto.hora,
+    monto: gasto.monto,
+    comercio: gasto.comercio,
+    categoria: gasto.categoria ?? "",
+    cuenta: gasto.cuenta ?? "",
+    gmail_id: gasto.gmailId ?? "",
+    creado_por: gasto.creadoPor ?? "",
+    notas: gasto.notas ?? "",
+    comentario: gasto.comentario ?? null,
+    tipo: gasto.tipo ?? null,
+    emoji: gasto.emoji ?? null,
+  });
+  if (error) throw error;
 }
 
 export async function updateGastoCategoria(gastoId: string, nuevaCategoria: string): Promise<void> {
-  const gastos = await getGastos();
-  const idx = gastos.findIndex((g) => g.id === gastoId);
-  if (idx !== -1) {
-    gastos[idx].categoria = nuevaCategoria;
-    await writeJson("gastos.json", gastos);
-  }
+  const { error } = await getSupabase()
+    .from("gastos")
+    .update({ categoria: nuevaCategoria })
+    .eq("id", gastoId);
+  if (error) throw error;
 }
 
 export async function patchGasto(
   gastoId: string,
-  fields: Partial<Pick<import("@/types").Gasto, "categoria" | "comentario" | "emoji" | "comercio" | "monto">>
+  fields: Partial<Pick<Gasto, "categoria" | "comentario" | "emoji" | "comercio" | "monto">>
 ): Promise<void> {
-  const gastos = await getGastos();
-  const idx = gastos.findIndex((g) => g.id === gastoId);
-  if (idx !== -1) {
-    Object.assign(gastos[idx], fields);
-    await writeJson("gastos.json", gastos);
-  }
+  const update: Record<string, unknown> = {};
+  if (fields.categoria  !== undefined) update.categoria  = fields.categoria;
+  if (fields.comentario !== undefined) update.comentario = fields.comentario;
+  if (fields.emoji      !== undefined) update.emoji      = fields.emoji;
+  if (fields.comercio   !== undefined) update.comercio   = fields.comercio;
+  if (fields.monto      !== undefined) update.monto      = fields.monto;
+  const { error } = await getSupabase().from("gastos").update(update).eq("id", gastoId);
+  if (error) throw error;
 }
 
 // ─── AUTO-CATEGORIZACIÓN ─────────────────────────────────────────────────────
 
-/**
- * Recorre todos los gastos sin categoría y, si el comercio ya aparece en otros
- * gastos con UNA SOLA categoría consistente, la asigna automáticamente.
- * Si el mismo comercio tiene categorías distintas en distintos gastos, lo deja
- * sin categoría para que el usuario lo clasifique manualmente.
- *
- * Retorna cuántos gastos fueron categorizados.
- */
 export async function autoCategorizeGastos(): Promise<number> {
   const gastos = await getGastos();
 
-  // Mapa comercio (uppercase) -> categorías únicas encontradas en gastos YA categorizados
   const catsPorComercio = new Map<string, Set<string>>();
   for (const g of gastos) {
     if (g.categoria?.trim()) {
@@ -92,129 +135,149 @@ export async function autoCategorizeGastos(): Promise<number> {
   }
 
   let count = 0;
-  const updated = gastos.map((g) => {
-    if (g.categoria?.trim()) return g; // ya tiene categoría
+  for (const g of gastos) {
+    if (g.categoria?.trim()) continue;
     const cats = catsPorComercio.get(g.comercio.toUpperCase());
-    if (!cats || cats.size !== 1) return g; // sin historial o ambiguo
+    if (!cats || cats.size !== 1) continue;
+    await getSupabase().from("gastos").update({ categoria: [...cats][0] }).eq("id", g.id);
     count++;
-    return { ...g, categoria: [...cats][0] };
-  });
-
-  if (count > 0) await writeJson("gastos.json", updated);
+  }
   return count;
 }
 
 // ─── COMERCIOS ───────────────────────────────────────────────────────────────
 
 export async function getComercios(): Promise<Comercio[]> {
-  return readJson<Comercio[]>("comercios.json", []);
+  const { data, error } = await getSupabase().from("comercios").select("*");
+  if (error) throw error;
+  return (data ?? []).map(toComercio);
 }
 
-export async function upsertComercio(
-  comercio: string,
-  categoria: string,
-  fecha: string
-): Promise<void> {
-  const comercios = await getComercios();
-  const idx = comercios.findIndex((c) => c.comercio === comercio);
-  if (idx === -1) {
-    comercios.push({ comercio, categoria, vecesUsado: 1, ultimaVez: fecha });
-  } else {
-    comercios[idx].categoria = categoria;
-    comercios[idx].vecesUsado += 1;
-    comercios[idx].ultimaVez = fecha;
-  }
-  await writeJson("comercios.json", comercios);
+export async function upsertComercio(comercio: string, categoria: string, fecha: string): Promise<void> {
+  // Fetch current veces_usado to increment it
+  const { data } = await getSupabase()
+    .from("comercios")
+    .select("veces_usado")
+    .eq("comercio", comercio)
+    .single();
+
+  const { error } = await getSupabase().from("comercios").upsert(
+    {
+      comercio,
+      categoria,
+      veces_usado: data ? (data.veces_usado as number) + 1 : 1,
+      ultima_vez: fecha,
+    },
+    { onConflict: "comercio" }
+  );
+  if (error) throw error;
 }
 
 // ─── CATEGORIAS ──────────────────────────────────────────────────────────────
 
 export async function getCategorias(): Promise<Categoria[]> {
-  const cats = await readJson<Categoria[]>("categorias.json", []);
-  if (cats.length === 0) {
-    await writeJson("categorias.json", CATEGORIAS_INICIALES);
+  const { data, error } = await getSupabase().from("categorias").select("*").order("nombre");
+  if (error) throw error;
+
+  if (!data || data.length === 0) {
+    // Seed defaults on first run
+    const { error: insertErr } = await getSupabase().from("categorias").insert(
+      CATEGORIAS_INICIALES.map((c) => ({
+        nombre: c.nombre,
+        emoji: c.emoji,
+        color: c.color,
+        presupuesto_mensual: c.presupuestoMensual,
+        activa: c.activa,
+      }))
+    );
+    if (insertErr) throw insertErr;
     return CATEGORIAS_INICIALES;
   }
-  return cats;
+
+  return data.map(toCategoria);
 }
 
 export async function appendCategoria(categoria: Omit<Categoria, "activa">): Promise<void> {
-  const cats = await getCategorias();
-  cats.push({ ...categoria, activa: true });
-  await writeJson("categorias.json", cats);
+  const { error } = await getSupabase().from("categorias").insert({
+    nombre: categoria.nombre,
+    emoji: categoria.emoji,
+    color: categoria.color,
+    presupuesto_mensual: categoria.presupuestoMensual,
+    activa: true,
+  });
+  if (error) throw error;
 }
 
 export async function updateCategoria(nombre: string, presupuesto: number, emoji?: string): Promise<void> {
-  const cats = await getCategorias();
-  const idx = cats.findIndex((c) => c.nombre === nombre);
-  if (idx !== -1) {
-    cats[idx].presupuestoMensual = presupuesto;
-    if (emoji) cats[idx].emoji = emoji;
-    await writeJson("categorias.json", cats);
-  }
+  const update: Record<string, unknown> = { presupuesto_mensual: presupuesto };
+  if (emoji) update.emoji = emoji;
+  const { error } = await getSupabase().from("categorias").update(update).eq("nombre", nombre);
+  if (error) throw error;
 }
 
 export async function renameCategoria(nombreViejo: string, nombreNuevo: string): Promise<void> {
-  const cats = await getCategorias();
-  const idx = cats.findIndex((c) => c.nombre === nombreViejo);
-  if (idx !== -1) {
-    cats[idx].nombre = nombreNuevo;
-    await writeJson("categorias.json", cats);
-  }
-  const gastos = await getGastos();
-  await writeJson("gastos.json", gastos.map((g) => g.categoria === nombreViejo ? { ...g, categoria: nombreNuevo } : g));
-  const comercios = await getComercios();
-  await writeJson("comercios.json", comercios.map((c) => c.categoria === nombreViejo ? { ...c, categoria: nombreNuevo } : c));
-  const presupuestos = await getPresupuestos();
-  await writeJson("presupuestos.json", presupuestos.map((p) => p.categoria === nombreViejo ? { ...p, categoria: nombreNuevo } : p));
+  // PostgreSQL allows updating a TEXT primary key when there are no FK constraints
+  await getSupabase().from("gastos").update({ categoria: nombreNuevo }).eq("categoria", nombreViejo);
+  await getSupabase().from("comercios").update({ categoria: nombreNuevo }).eq("categoria", nombreViejo);
+  await getSupabase().from("presupuestos").update({ categoria: nombreNuevo }).eq("categoria", nombreViejo);
+  const { error } = await getSupabase()
+    .from("categorias")
+    .update({ nombre: nombreNuevo })
+    .eq("nombre", nombreViejo);
+  if (error) throw error;
 }
 
 export async function deleteCategoria(nombre: string): Promise<void> {
-  const cats = await getCategorias();
-  await writeJson("categorias.json", cats.filter((c) => c.nombre !== nombre));
-  const gastos = await getGastos();
-  await writeJson("gastos.json", gastos.map((g) => g.categoria === nombre ? { ...g, categoria: "" } : g));
-  const comercios = await getComercios();
-  await writeJson("comercios.json", comercios.map((c) => c.categoria === nombre ? { ...c, categoria: "" } : c));
-  const presupuestos = await getPresupuestos();
-  await writeJson("presupuestos.json", presupuestos.filter((p) => p.categoria !== nombre));
+  await getSupabase().from("gastos").update({ categoria: "" }).eq("categoria", nombre);
+  await getSupabase().from("comercios").update({ categoria: "" }).eq("categoria", nombre);
+  await getSupabase().from("presupuestos").delete().eq("categoria", nombre);
+  const { error } = await getSupabase().from("categorias").delete().eq("nombre", nombre);
+  if (error) throw error;
 }
 
 // ─── PRESUPUESTOS ─────────────────────────────────────────────────────────────
 
 export async function getPresupuestos(): Promise<Presupuesto[]> {
-  return readJson<Presupuesto[]>("presupuestos.json", []);
+  const { data, error } = await getSupabase().from("presupuestos").select("*");
+  if (error) throw error;
+  return (data ?? []).map(toPresupuesto);
 }
 
-export async function upsertPresupuesto(
-  mes: string,
-  categoria: string,
-  presupuesto: number
-): Promise<void> {
-  const presupuestos = await getPresupuestos();
-  const idx = presupuestos.findIndex((p) => p.mes === mes && p.categoria === categoria);
-  if (idx === -1) {
-    presupuestos.push({ mes, categoria, presupuesto });
-  } else {
-    presupuestos[idx].presupuesto = presupuesto;
-  }
-  await writeJson("presupuestos.json", presupuestos);
+export async function upsertPresupuesto(mes: string, categoria: string, presupuesto: number): Promise<void> {
+  const { error } = await getSupabase()
+    .from("presupuestos")
+    .upsert({ mes, categoria, presupuesto }, { onConflict: "mes,categoria" });
+  if (error) throw error;
 }
 
 // ─── IMPORTACIONES ────────────────────────────────────────────────────────────
 
 export async function getImportaciones(): Promise<Importacion[]> {
-  const list = await readJson<Importacion[]>("importaciones.json", []);
-  return list.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  const { data, error } = await getSupabase()
+    .from("importaciones")
+    .select("*")
+    .order("timestamp", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(toImportacion);
 }
 
 export async function appendImportacion(imp: Importacion): Promise<void> {
-  const list = await readJson<Importacion[]>("importaciones.json", []);
-  list.push(imp);
-  await writeJson("importaciones.json", list);
+  const { error } = await getSupabase().from("importaciones").insert({
+    id: imp.id,
+    timestamp: imp.timestamp,
+    cantidad: imp.cantidad,
+    desde_date: imp.desdeDate,
+  });
+  if (error) throw error;
 }
 
 export async function getUltimaImportacion(): Promise<Importacion | null> {
-  const list = await getImportaciones();
-  return list[0] ?? null;
+  const { data, error } = await getSupabase()
+    .from("importaciones")
+    .select("*")
+    .order("timestamp", { ascending: false })
+    .limit(1)
+    .single();
+  if (error || !data) return null;
+  return toImportacion(data);
 }
