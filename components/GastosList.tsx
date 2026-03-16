@@ -23,7 +23,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
   }
 
   return (
-    <div className="divide-y divide-gray-50">
+    <div className="divide-y divide-gray-100">
       {gastos.map((gasto) => {
         const cat = catMap[gasto.categoria];
         const esTransferencia = gasto.tipo === "transferencia";
@@ -43,7 +43,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
                 <div className="flex items-center gap-1.5">
                   <p className="font-medium text-gray-900 text-sm truncate">{gasto.comercio}</p>
                   {esTransferencia && (
-                    <span className="text-[10px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1 py-0.5 flex-shrink-0">
+                    <span className="text-xs font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1.5 py-0.5 flex-shrink-0">
                       Transferencia
                     </span>
                   )}
@@ -74,7 +74,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
               {onEditCategoria && (
                 <button
                   onClick={() => onEditCategoria(gasto)}
-                  className="text-gray-300 hover:text-blue-500 transition-colors p-1 rounded"
+                  className="text-gray-400 hover:text-blue-500 transition-colors p-2 rounded"
                   title="Cambiar categoría / comentario"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

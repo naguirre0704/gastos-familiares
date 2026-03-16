@@ -315,7 +315,7 @@ export default function ImportarPage() {
                   <div className="flex items-center gap-1.5">
                     <p className="text-sm font-semibold text-gray-900 truncate">{g.comercio}</p>
                     {g.tipo === "transferencia" && (
-                      <span className="text-[10px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1 py-0.5 flex-shrink-0">
+                      <span className="text-xs font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1.5 py-0.5 flex-shrink-0">
                         Transferencia
                       </span>
                     )}
@@ -325,7 +325,7 @@ export default function ImportarPage() {
                   <select
                     value={fila.categoria}
                     onChange={(e) => setCategoria(g.gmailId, e.target.value)}
-                    className={`mt-1.5 w-full text-xs border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`mt-1.5 w-full text-xs border rounded-xl px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       !fila.categoria && fila.seleccionado
                         ? "border-amber-400 bg-amber-50"
                         : "border-gray-200 bg-gray-50"
@@ -344,7 +344,7 @@ export default function ImportarPage() {
                     value={fila.comentario}
                     onChange={(e) => setComentario(g.gmailId, e.target.value)}
                     placeholder="Comentario opcional…"
-                    className="mt-1 w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"
+                    className="mt-1 w-full text-xs border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-300"
                   />
                 </div>
 
