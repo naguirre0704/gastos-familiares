@@ -97,9 +97,10 @@ export default function DashboardPage() {
   }
 
   async function handleConfirmEdit(
-    _: PendingGasto,
+    pendingGasto: PendingGasto,
     categoria: string,
-    recordar: boolean
+    recordar: boolean,
+    comentario: string
   ) {
     if (!editingGasto) return;
     await fetch("/api/gastos", {
@@ -108,8 +109,9 @@ export default function DashboardPage() {
       body: JSON.stringify({
         id: editingGasto.id,
         categoria,
+        comentario: comentario || undefined,
         comercio: editingGasto.comercio,
-        fecha: editingGasto.fecha,
+        fecha: pendingGasto.fecha,
         recordarComercio: recordar,
       }),
     });

@@ -5,8 +5,19 @@ import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { Categoria } from "@/types";
 
+// DD/MM/YYYY  ↔  YYYY-MM-DD
+function toInputDate(dmy: string): string {
+  const [dd, mm, yyyy] = dmy.split("/");
+  return dd && mm && yyyy ? `${yyyy}-${mm}-${dd}` : "";
+}
+function fromInputDate(ymd: string): string {
+  const [yyyy, mm, dd] = ymd.split("-");
+  return yyyy && mm && dd ? `${dd}/${mm}/${yyyy}` : "";
+}
+
 interface TransferenciaGasto {
   id: string;
+  fecha: string;
   emoji?: string;
   comercio: string;
   monto: number;
@@ -19,7 +30,7 @@ interface TransferenciaModalProps {
   categorias: Categoria[];
   onConfirm: (
     id: string,
-    fields: { emoji?: string; comercio: string; monto: number; categoria: string; comentario?: string }
+    fields: { fecha: string; emoji?: string; comercio: string; monto: number; categoria: string; comentario?: string }
   ) => Promise<void>;
   onClose: () => void;
 }
@@ -30,6 +41,7 @@ export function TransferenciaModal({ gasto, categorias, onConfirm, onClose }: Tr
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("");
   const [comentario, setComentario] = useState("");
+  const [fecha, setFecha] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -39,6 +51,7 @@ export function TransferenciaModal({ gasto, categorias, onConfirm, onClose }: Tr
       setMonto(String(gasto.monto));
       setCategoria(gasto.categoria || "");
       setComentario(gasto.comentario || "");
+      setFecha(toInputDate(gasto.fecha));
     }
   }, [gasto?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -54,6 +67,7 @@ export function TransferenciaModal({ gasto, categorias, onConfirm, onClose }: Tr
     setLoading(true);
     try {
       await onConfirm(gasto.id, {
+        fecha: fromInputDate(fecha) || gasto.fecha,
         emoji: emoji.trim() || undefined,
         comercio: nombre.trim(),
         monto: montoNum,
@@ -95,6 +109,17 @@ export function TransferenciaModal({ gasto, categorias, onConfirm, onClose }: Tr
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-300"
             />
           </div>
+        </div>
+
+        {/* Fecha */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {/* Monto */}

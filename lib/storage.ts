@@ -108,7 +108,7 @@ export async function updateGastoCategoria(gastoId: string, nuevaCategoria: stri
 
 export async function patchGasto(
   gastoId: string,
-  fields: Partial<Pick<Gasto, "categoria" | "comentario" | "emoji" | "comercio" | "monto">>
+  fields: Partial<Pick<Gasto, "categoria" | "comentario" | "emoji" | "comercio" | "monto" | "fecha">>
 ): Promise<void> {
   const update: Record<string, unknown> = {};
   if (fields.categoria  !== undefined) update.categoria  = fields.categoria;
@@ -116,6 +116,7 @@ export async function patchGasto(
   if (fields.emoji      !== undefined) update.emoji      = fields.emoji;
   if (fields.comercio   !== undefined) update.comercio   = fields.comercio;
   if (fields.monto      !== undefined) update.monto      = fields.monto;
+  if (fields.fecha      !== undefined) update.fecha      = fields.fecha;
   const { error } = await getSupabase().from("gastos").update(update).eq("id", gastoId);
   if (error) throw error;
 }
