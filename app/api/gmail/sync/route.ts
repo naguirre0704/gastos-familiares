@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { fetchGastosDeGmail, isGmailConnected } from "@/lib/gmail";
 import { getGastos, getComercios, getUltimaImportacion } from "@/lib/storage";
 import { apiError } from "@/lib/api";
@@ -28,15 +28,19 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
     const connected = await isGmailConnected();
     if (!connected) {
       return NextResponse.json({ needsAuth: true }, { status: 401 });
     }
 
+    // Optional ?from=YYYY-MM-DD overrides the last-import date
+    const fromParam = req.nextUrl.searchParams.get("from");
     const ultima = await getUltimaImportacion();
-    const afterDate = safeGmailDate(ultima ? toGmailDate(ultima.timestamp) : FALLBACK_DATE);
+    const afterDate = fromParam
+      ? safeGmailDate(fromParam.replace(/-/g, "/"))
+      : safeGmailDate(ultima ? toGmailDate(ultima.timestamp) : FALLBACK_DATE);
 
     const [gmailGastos, existentes, comercios] = await Promise.all([
       fetchGastosDeGmail(afterDate),
