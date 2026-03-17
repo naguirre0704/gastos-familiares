@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { GastosList } from "@/components/GastosList";
 import { CategoryModal } from "@/components/CategoryModal";
 import { TransferenciaModal } from "@/components/TransferenciaModal";
+import { NuevoGastoModal } from "@/components/NuevoGastoModal";
 import { Gasto, Categoria } from "@/types";
 
 function getMesActual() {
@@ -30,6 +31,7 @@ export default function GastosPage() {
   const [mesFiltro, setMesFiltro] = useState(getMesActual());
   const [catFiltro, setCatFiltro] = useState("");
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+  const [nuevoGastoOpen, setNuevoGastoOpen] = useState(false);
 
   const editingTransferencia = editingGasto?.tipo === "transferencia" ? editingGasto : null;
   const editingCompra = editingGasto?.tipo !== "transferencia" ? editingGasto : null;
@@ -209,6 +211,24 @@ export default function GastosPage() {
         categorias={categorias}
         onConfirm={handleConfirmEdit}
         onClose={() => setEditingGasto(null)}
+      />
+
+      {/* FAB */}
+      <button
+        onClick={() => setNuevoGastoOpen(true)}
+        className="fixed bottom-24 right-5 z-40 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+        aria-label="Agregar gasto manual"
+      >
+        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      <NuevoGastoModal
+        open={nuevoGastoOpen}
+        categorias={categorias.filter((c) => c.activa)}
+        onClose={() => setNuevoGastoOpen(false)}
+        onSaved={fetchData}
       />
 
       <TransferenciaModal
