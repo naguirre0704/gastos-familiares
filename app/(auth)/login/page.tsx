@@ -3,7 +3,6 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -21,14 +20,8 @@ export default function LoginPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-ivory">
-        <div
-          className="w-8 h-8 border-4 rounded-full animate-spin"
-          style={{
-            borderColor: "var(--color-terracota)",
-            borderTopColor: "transparent",
-          }}
-        />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -44,97 +37,103 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (result?.error) {
-      setError("Hmm, algo no cuadra. ¿Revisamos?");
+      setError("Usuario o contraseña incorrectos. Intentá de nuevo.");
     } else {
       router.replace("/");
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-ivory">
-      {/* Illustration */}
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Foto familiar */}
       <div className="relative w-full flex-shrink-0" style={{ height: "52vh", minHeight: 280 }}>
-        <Image
-          src="/familia.jpg"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/familia.PNG"
           alt="Nuestra familia"
-          fill
-          className="object-cover object-top"
-          priority
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: "center 15%" }}
         />
-        {/* Gradient fade to form */}
+        {/* Degradado hacia gris claro */}
         <div
           className="absolute bottom-0 left-0 right-0"
           style={{
             height: "55%",
-            background: "linear-gradient(to bottom, transparent, var(--color-ivory))",
+            background: "linear-gradient(to bottom, transparent, #F9FAFB)",
           }}
         />
       </div>
 
-      {/* Form area */}
-      <div className="flex-1 flex flex-col px-6 pb-10" style={{ marginTop: "-2rem" }}>
-        {/* Header */}
-        <div className="text-center mb-7">
-          <h1
-            className="font-extrabold text-brown-dark"
-            style={{ fontSize: "28px", letterSpacing: "-0.3px" }}
-          >
-            🏠 Gastos Familiares
-          </h1>
-          <p className="text-brown-mid" style={{ fontSize: "15px", marginTop: "4px" }}>
-            Tu hogar, tus finanzas.
-          </p>
+      {/* Área del formulario */}
+      <div className="flex-1 flex flex-col items-center px-6 pb-10 -mt-8">
+        {/* Título */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Gastos Familiares</h1>
+          <p className="text-gray-500 text-sm mt-1">Tu hogar, tus finanzas.</p>
         </div>
 
         {/* Card */}
-        <div
-          className="w-full max-w-sm mx-auto"
-          style={{
-            background: "#fff",
-            borderRadius: "24px",
-            padding: "28px 24px",
-            boxShadow: "0 8px 40px rgba(46,31,15,0.10)",
-          }}
-        >
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Usuario */}
             <div>
-              <label className="block font-semibold mb-1.5 text-brown-mid" style={{ fontSize: "13px" }}>
-                Tu usuario
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
+                Usuario
               </label>
               <input
+                id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                className="login-input"
                 required
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-400 outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Tu usuario"
               />
             </div>
 
+            {/* Contraseña */}
             <div>
-              <label className="block font-semibold mb-1.5 text-brown-mid" style={{ fontSize: "13px" }}>
-                Tu contraseña
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
+                Contraseña
               </label>
               <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                className="login-input"
                 required
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-400 outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Tu contraseña"
               />
             </div>
 
+            {/* Error */}
             {error && (
-              <p style={{ color: "var(--color-error)", fontSize: "13px" }}>{error}</p>
+              <p className="text-red-500 text-sm">{error}</p>
             )}
 
+            {/* Botón */}
             <button
               type="submit"
               disabled={loading}
-              className="btn-login"
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm rounded-xl transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mt-2"
             >
-              {loading ? "Un momento…" : "Entrar a casa →"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Ingresando…
+                </span>
+              ) : (
+                "Ingresar"
+              )}
             </button>
           </form>
         </div>
