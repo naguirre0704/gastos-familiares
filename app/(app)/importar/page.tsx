@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Categoria, Importacion } from "@/types";
@@ -35,6 +35,7 @@ type Estado =
 
 export default function ImportarPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [estado, setEstado] = useState<Estado>("loading");
   const [historial, setHistorial] = useState<Importacion[]>([]);
@@ -75,11 +76,21 @@ export default function ImportarPage() {
 
   useEffect(() => { cargarHistorial(); }, [cargarHistorial]);
 
+  // Auto-trigger sync if ?from param is present (from manual import in Configuración)
+  const fromParam = searchParams.get("from");
+  useEffect(() => {
+    if (fromParam && estado === "idle") {
+      handleSincronizar(fromParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromParam, estado]);
+
   // Trigger sync from Gmail
-  async function handleSincronizar() {
+  async function handleSincronizar(fromDate?: string) {
     setEstado("syncing");
     try {
-      const res = await fetch("/api/gmail/sync", { method: "POST" });
+      const url = fromDate ? `/api/gmail/sync?from=${fromDate}` : "/api/gmail/sync";
+      const res = await fetch(url, { method: "POST" });
 
       if (res.status === 401) {
         setEstado("needsAuth");
@@ -348,7 +359,7 @@ export default function ImportarPage() {
       </div>
 
       {/* Import action */}
-      <Button className="w-full" onClick={handleSincronizar}>
+      <Button className="w-full" onClick={() => handleSincronizar()}>
         Buscar gastos nuevos
       </Button>
 
