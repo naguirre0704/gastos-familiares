@@ -21,8 +21,14 @@ export default function LoginPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#FDF6EC" }}>
-        <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#E07B39", borderTopColor: "transparent" }} />
+      <div className="min-h-screen flex items-center justify-center bg-ivory">
+        <div
+          className="w-8 h-8 border-4 rounded-full animate-spin"
+          style={{
+            borderColor: "var(--color-terracota)",
+            borderTopColor: "transparent",
+          }}
+        />
       </div>
     );
   }
@@ -44,24 +50,8 @@ export default function LoginPage() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "12px 16px",
-    borderRadius: "14px",
-    border: "1.5px solid #D4C5B8",
-    background: "#FEFAF5",
-    color: "#2E1F0F",
-    fontSize: "15px",
-    fontFamily: "Nunito, system-ui, sans-serif",
-    outline: "none",
-    transition: "border-color 0.2s",
-  };
-
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ background: "#FDF6EC", fontFamily: "Nunito, system-ui, sans-serif" }}
-    >
+    <div className="min-h-screen flex flex-col bg-ivory">
       {/* Illustration */}
       <div className="relative w-full flex-shrink-0" style={{ height: "52vh", minHeight: 280 }}>
         <Image
@@ -76,7 +66,7 @@ export default function LoginPage() {
           className="absolute bottom-0 left-0 right-0"
           style={{
             height: "55%",
-            background: "linear-gradient(to bottom, transparent, #FDF6EC)",
+            background: "linear-gradient(to bottom, transparent, var(--color-ivory))",
           }}
         />
       </div>
@@ -86,12 +76,12 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-7">
           <h1
-            className="font-extrabold"
-            style={{ fontSize: "28px", color: "#2E1F0F", letterSpacing: "-0.3px" }}
+            className="font-extrabold text-brown-dark"
+            style={{ fontSize: "28px", letterSpacing: "-0.3px" }}
           >
             🏠 Gastos Familiares
           </h1>
-          <p style={{ color: "#8C7A6B", fontSize: "15px", marginTop: "4px" }}>
+          <p className="text-brown-mid" style={{ fontSize: "15px", marginTop: "4px" }}>
             Tu hogar, tus finanzas.
           </p>
         </div>
@@ -108,10 +98,7 @@ export default function LoginPage() {
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                className="block font-semibold mb-1.5"
-                style={{ fontSize: "13px", color: "#8C7A6B" }}
-              >
+              <label className="block font-semibold mb-1.5 text-brown-mid" style={{ fontSize: "13px" }}>
                 Tu usuario
               </label>
               <input
@@ -119,18 +106,13 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#E07B39")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#D4C5B8")}
+                className="login-input"
                 required
               />
             </div>
 
             <div>
-              <label
-                className="block font-semibold mb-1.5"
-                style={{ fontSize: "13px", color: "#8C7A6B" }}
-              >
+              <label className="block font-semibold mb-1.5 text-brown-mid" style={{ fontSize: "13px" }}>
                 Tu contraseña
               </label>
               <input
@@ -138,34 +120,19 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#E07B39")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#D4C5B8")}
+                className="login-input"
                 required
               />
             </div>
 
             {error && (
-              <p style={{ color: "#C0392B", fontSize: "13px" }}>{error}</p>
+              <p style={{ color: "var(--color-error)", fontSize: "13px" }}>{error}</p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "14px",
-                background: loading ? "#C89070" : "#E07B39",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: "16px",
-                fontFamily: "Nunito, system-ui, sans-serif",
-                border: "none",
-                cursor: loading ? "not-allowed" : "pointer",
-                transition: "background 0.2s",
-                marginTop: "4px",
-              }}
+              className="btn-login"
             >
               {loading ? "Un momento…" : "Entrar a casa →"}
             </button>
