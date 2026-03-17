@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="antialiased bg-gray-50" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <body className="antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

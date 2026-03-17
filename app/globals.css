@@ -1,11 +1,73 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
+/* ── Brand palette ──────────────────────────────────────────────────────── */
+:root {
+  --color-ivory:       #FDF6EC;   /* warm ivory – page background          */
+  --color-ivory-input: #FEFAF5;   /* slightly lighter, for input fields     */
+  --color-terracota:   #E07B39;   /* terracota – primary CTA / accent       */
+  --color-terracota-muted: #C89070; /* terracota disabled / muted state     */
+  --color-brown-dark:  #2E1F0F;   /* dark brown – headings / body text      */
+  --color-brown-mid:   #8C7A6B;   /* medium brown – secondary text / labels */
+  --color-border:      #D4C5B8;   /* warm beige – input borders             */
+  --color-error:       #C0392B;   /* error red                              */
+  --font-body: "Nunito", system-ui, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: var(--color-ivory);
+  color: var(--color-brown-dark);
+  font-family: var(--font-body);
+}
+
+/* ── Utility classes for the brand palette ──────────────────────────────── */
+.bg-ivory         { background-color: var(--color-ivory); }
+.bg-ivory-input   { background-color: var(--color-ivory-input); }
+.bg-terracota     { background-color: var(--color-terracota); }
+.text-brown-dark  { color: var(--color-brown-dark); }
+.text-brown-mid   { color: var(--color-brown-mid); }
+.text-terracota   { color: var(--color-terracota); }
+.border-warm      { border-color: var(--color-border); }
+
+/* ── Login page inputs ──────────────────────────────────────────────────── */
+.login-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-ivory-input);
+  color: var(--color-brown-dark);
+  font-size: 15px;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-input:focus {
+  border-color: var(--color-terracota);
+}
+
+/* ── Login CTA button ───────────────────────────────────────────────────── */
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--color-terracota);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: var(--font-body);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+
+.btn-login:disabled {
+  background: var(--color-terracota-muted);
+  cursor: not-allowed;
 }
