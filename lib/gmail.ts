@@ -287,6 +287,60 @@ function parseTransferencia(id: string, payload: unknown): GastoParseado | null 
   };
 }
 
+// ── Banco de Chile "Servicio de transferencias / SERVIPAG" parser ─────────────
+
+function parseServipagDate(text: string): { fecha: string; hora: string } | null {
+  // "lunes 02 de marzo 2026 22:25 Hrs."  (no second "de" before year)
+  const m = text.match(/(\d{1,2}) de (\w+)\s+(\d{4})\s+(\d{2}:\d{2})/i);
+  if (!m) return null;
+  const mes = MESES_ES[m[2].toLowerCase()];
+  if (!mes) return null;
+  return { fecha: `${m[1].padStart(2, "0")}/${mes}/${m[3]}`, hora: m[4] };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseServipag(id: string, payload: unknown): GastoParseado[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body = extractPlainText(payload as any);
+  if (!body) return [];
+
+  // Only process SERVIPAG payment receipts
+  if (!/Comprobante de pago electr[oó]nico/i.test(body)) return [];
+
+  const fechaHora = parseServipagDate(body);
+  if (!fechaHora) return [];
+
+  // Each item row: "ServiceName   $price   quantity   $lineTotal"
+  // Works with both newline-separated and space-collapsed text.
+  // The character class includes spaces so "Aguas Cordillera" is captured as one token.
+  const itemRe = /([A-Za-záéíóúüñÁÉÍÓÚÜÑ][A-Za-záéíóúüñÁÉÍÓÚÜÑ ]+?)\s+\$[\d.]+\s+\d+\s+\$([\d.]+)/g;
+
+  const gastos: GastoParseado[] = [];
+  let idx = 0;
+  let match;
+
+  while ((match = itemRe.exec(body)) !== null) {
+    const comercio = match[1].trim();
+    const monto = parseInt(match[2].replace(/\./g, ""), 10);
+
+    // Skip table header row
+    if (/Descripci[oó]n/i.test(comercio)) continue;
+    if (!comercio || isNaN(monto) || monto <= 0) continue;
+
+    gastos.push({
+      gmailId: `${id}_s${idx}`,
+      fecha: fechaHora.fecha,
+      hora: fechaHora.hora,
+      monto,
+      comercio: comercio.toUpperCase(),
+      tipo: "compra",
+    });
+    idx++;
+  }
+
+  return gastos;
+}
+
 // ── Main fetcher ──────────────────────────────────────────────────────────────
 
 export async function fetchGastosDeGmail(afterDate = "2025/12/31"): Promise<GastoParseado[]> {
@@ -295,20 +349,27 @@ export async function fetchGastosDeGmail(afterDate = "2025/12/31"): Promise<Gast
 
   const gmail = google.gmail({ version: "v1", auth });
 
-  const listRes = await gmail.users.messages.list({
-    userId: "me",
-    q: `from:enviodigital@bancochile.cl after:${afterDate}`,
-    maxResults: 500,
-  });
-
-  const transferenciaRes = await gmail.users.messages.list({
-    userId: "me",
-    q: `from:serviciodetransferencias@bancochile.cl after:${afterDate}`,
-    maxResults: 500,
-  });
+  const [listRes, transferenciaRes, servipagRes] = await Promise.all([
+    gmail.users.messages.list({
+      userId: "me",
+      q: `from:enviodigital@bancochile.cl after:${afterDate}`,
+      maxResults: 500,
+    }),
+    gmail.users.messages.list({
+      userId: "me",
+      q: `from:serviciodetransferencias@bancochile.cl after:${afterDate}`,
+      maxResults: 500,
+    }),
+    gmail.users.messages.list({
+      userId: "me",
+      q: `from:serviciotransferencias@bancochile.cl after:${afterDate}`,
+      maxResults: 500,
+    }),
+  ]);
 
   const messages = listRes.data.messages ?? [];
   const transMessages = transferenciaRes.data.messages ?? [];
+  const servipagMessages = servipagRes.data.messages ?? [];
   const gastos: GastoParseado[] = [];
 
   // Parse purchase notifications
@@ -338,6 +399,22 @@ export async function fetchGastosDeGmail(afterDate = "2025/12/31"): Promise<Gast
       });
       const parsed = parseTransferencia(msg.id, detail.data.payload);
       if (parsed) gastos.push(parsed);
+    } catch {
+      // Skip unreadable messages
+    }
+  }
+
+  // Parse SERVIPAG payment receipts (1 email → N gastos, one per line item)
+  for (const msg of servipagMessages) {
+    if (!msg.id) continue;
+    try {
+      const detail = await gmail.users.messages.get({
+        userId: "me",
+        id: msg.id,
+        format: "full",
+      });
+      const items = parseServipag(msg.id, detail.data.payload);
+      gastos.push(...items);
     } catch {
       // Skip unreadable messages
     }
