@@ -49,7 +49,7 @@ export default function LoginPage() {
       {/* Foto familiar */}
       <div className="relative w-full flex-shrink-0" style={{ height: "52vh", minHeight: 280 }}>
         <Image
-          src="/familia.jpg"
+          src="/familia.PNG"
           alt="Nuestra familia"
           fill
           className="object-cover"
