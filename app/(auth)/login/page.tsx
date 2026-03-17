@@ -3,7 +3,6 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -48,14 +47,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Foto familiar */}
       <div className="relative w-full flex-shrink-0" style={{ height: "52vh", minHeight: 280 }}>
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/familia.PNG"
           alt="Nuestra familia"
-          fill
-          className="object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           style={{ objectPosition: "center 15%" }}
-          sizes="100vw"
-          priority
         />
         {/* Degradado hacia gris claro */}
         <div
