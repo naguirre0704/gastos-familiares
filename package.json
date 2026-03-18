@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "review:ui": "npx tsx agents/ux-reviewer.ts",
-    "review:arch": "npx tsx agents/architecture-reviewer.ts",
-    "implement:arch": "npx tsx agents/architecture-implementer.ts"
+    "review:ui": "env -u CLAUDECODE npx tsx agents/ux-reviewer.ts",
+    "review:arch": "env -u CLAUDECODE npx tsx agents/architecture-reviewer.ts",
+    "implement:arch": "env -u CLAUDECODE npx tsx agents/architecture-implementer.ts",
+    "review:security": "env -u CLAUDECODE npx tsx agents/security-reviewer.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.76",
