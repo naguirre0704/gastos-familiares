@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "review:ui": "npx tsx agents/ux-reviewer.ts"
+    "review:ui": "npx tsx agents/ux-reviewer.ts",
+    "review:arch": "npx tsx agents/architecture-reviewer.ts",
+    "implement:arch": "npx tsx agents/architecture-implementer.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.76",
     "@supabase/supabase-js": "^2.99.2",
-    "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
     "googleapis": "^171.4.0",
     "next": "16.1.6",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
