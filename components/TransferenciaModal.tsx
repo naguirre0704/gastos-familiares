@@ -4,16 +4,7 @@ import { useState, useEffect } from "react";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { Categoria } from "@/types";
-
-// DD/MM/YYYY  ↔  YYYY-MM-DD
-function toInputDate(dmy: string): string {
-  const [dd, mm, yyyy] = dmy.split("/");
-  return dd && mm && yyyy ? `${yyyy}-${mm}-${dd}` : "";
-}
-function fromInputDate(ymd: string): string {
-  const [yyyy, mm, dd] = ymd.split("-");
-  return yyyy && mm && dd ? `${dd}/${mm}/${yyyy}` : "";
-}
+import { toInputDate, fromInputDate } from "@/lib/dates";
 
 interface TransferenciaGasto {
   id: string;
@@ -85,7 +76,7 @@ export function TransferenciaModal({ gasto, categorias, onConfirm, onClose }: Tr
 
         {/* Emoji + Nombre side by side */}
         <div className="flex gap-3">
-          <div className="w-20 flex-shrink-0">
+          <div className="w-20 shrink-0">
             <label className="block text-xs font-medium text-gray-500 mb-1">Emoji</label>
             <input
               type="text"

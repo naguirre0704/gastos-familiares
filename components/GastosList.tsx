@@ -2,6 +2,7 @@
 
 import { Gasto, Categoria } from "@/types";
 import { Badge } from "./ui/Badge";
+import { TransferenciaBadge } from "./ui/TransferenciaBadge";
 import { formatMonedaChile } from "@/lib/parser";
 
 interface GastosListProps {
@@ -34,7 +35,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
           >
             <div className="flex items-center gap-3 min-w-0">
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
                 style={{ backgroundColor: `${cat?.color || "#6B7280"}20` }}
               >
                 {gasto.emoji || (esTransferencia ? "💸" : cat?.emoji || "📦")}
@@ -42,11 +43,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <p className="font-medium text-gray-900 text-sm truncate">{gasto.comercio}</p>
-                  {esTransferencia && (
-                    <span className="text-xs font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1.5 py-0.5 flex-shrink-0">
-                      Transferencia
-                    </span>
-                  )}
+                  {esTransferencia && <TransferenciaBadge />}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs text-gray-400">{gasto.fecha}</span>
@@ -75,7 +72,7 @@ export function GastosList({ gastos, categorias, onEditCategoria }: GastosListPr
                 <button
                   onClick={() => onEditCategoria(gasto)}
                   className="text-gray-400 hover:text-blue-500 transition-colors p-2 rounded"
-                  title="Cambiar categoría / comentario"
+                  aria-label="Cambiar categoría / comentario"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

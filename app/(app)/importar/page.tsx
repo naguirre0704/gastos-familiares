@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { TransferenciaBadge } from "@/components/ui/TransferenciaBadge";
 import { Categoria, Importacion } from "@/types";
 import { formatMonedaChile } from "@/lib/parser";
 
@@ -294,11 +295,7 @@ export default function ImportarPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-semibold text-gray-900 truncate">{g.comercio}</p>
-                      {g.tipo === "transferencia" && (
-                        <span className="text-xs font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-1.5 py-0.5 flex-shrink-0">
-                          Transferencia
-                        </span>
-                      )}
+                      {g.tipo === "transferencia" && <TransferenciaBadge />}
                     </div>
                     <p className="text-xs text-gray-400">{g.hora} hrs</p>
                     <select

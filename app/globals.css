@@ -30,47 +30,7 @@
 
   html,
   body {
-    background-color: var(--color-ivory);
-    color: var(--color-brown-dark);
-    font-family: var(--font-body);
+    overflow-x: hidden;
   }
 }
 
-/* ── Login page inputs ──────────────────────────────────────────────────── */
-.login-input {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 14px;
-  border: 1.5px solid var(--color-border);
-  background: var(--color-ivory-input);
-  color: var(--color-brown-dark);
-  font-size: 15px;
-  font-family: var(--font-body);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.login-input:focus {
-  border-color: var(--color-terracota);
-}
-
-/* ── Login CTA button ───────────────────────────────────────────────────── */
-.btn-login {
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--color-terracota);
-  color: #fff;
-  font-weight: 700;
-  font-size: 16px;
-  font-family: var(--font-body);
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 4px;
-}
-
-.btn-login:disabled {
-  background: var(--color-terracota-muted);
-  cursor: not-allowed;
-}

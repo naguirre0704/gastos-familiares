@@ -58,7 +58,7 @@ export default function ConfiguracionPage() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800">Banco de Chile</p>
             <p className="text-xs text-gray-500">
-              Importa los cargos de <span className="font-mono">enviodigital@bancochile.cl</span> de todo el 2026
+              Importa los cargos de <span className="font-mono">enviodigital@bancochile.cl</span> desde la fecha seleccionada
             </p>
           </div>
         </div>

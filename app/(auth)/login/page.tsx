@@ -3,6 +3,8 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -26,7 +28,7 @@ export default function LoginPage() {
     );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -46,7 +48,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Foto familiar */}
-      <div className="relative w-full flex-shrink-0" style={{ height: "52vh", minHeight: 280 }}>
+      <div className="relative w-full shrink-0 h-[52vh] min-h-70">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/familia.PNG"
@@ -72,15 +74,10 @@ export default function LoginPage() {
           <p className="text-gray-500 text-sm mt-1">Tu hogar, tus finanzas.</p>
         </div>
 
-        {/* Card */}
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <Card className="w-full max-w-sm" padding="lg">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Usuario */}
             <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Usuario
               </label>
               <input
@@ -95,12 +92,8 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Contraseña */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Contraseña
               </label>
               <input
@@ -115,17 +108,9 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Error */}
-            {error && (
-              <p className="text-red-500 text-sm">{error}</p>
-            )}
+            {error && <p className="text-red-500 text-sm">{error}</p>}
 
-            {/* Botón */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm rounded-xl transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mt-2"
-            >
+            <Button type="submit" disabled={loading} className="w-full mt-2" size="lg">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -134,9 +119,9 @@ export default function LoginPage() {
               ) : (
                 "Ingresar"
               )}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   );

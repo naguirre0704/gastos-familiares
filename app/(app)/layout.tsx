@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { Button } from "@/components/ui/Button";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: "📊" },
@@ -48,12 +49,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="text-xs text-gray-500 hidden sm:block">
               {session.user?.email}
             </span>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
               Salir
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -64,7 +66,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-40">
+      <nav aria-label="Navegación principal" className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-40">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex">
             {navItems.map((item) => {

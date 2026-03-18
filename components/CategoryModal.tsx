@@ -5,6 +5,7 @@ import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { Categoria } from "@/types";
 import { formatMonedaChile } from "@/lib/parser";
+import { toInputDate, fromInputDate } from "@/lib/dates";
 
 interface PendingGasto {
   gmailId: string;
@@ -23,15 +24,6 @@ interface CategoryModalProps {
   onClose: () => void;
 }
 
-// DD/MM/YYYY  ↔  YYYY-MM-DD
-function toInputDate(dmy: string): string {
-  const [dd, mm, yyyy] = dmy.split("/");
-  return dd && mm && yyyy ? `${yyyy}-${mm}-${dd}` : "";
-}
-function fromInputDate(ymd: string): string {
-  const [yyyy, mm, dd] = ymd.split("-");
-  return yyyy && mm && dd ? `${dd}/${mm}/${yyyy}` : "";
-}
 
 export function CategoryModal({
   gasto,
@@ -89,6 +81,7 @@ export function CategoryModal({
           {activeCats.map((cat) => (
             <button
               key={cat.nombre}
+              type="button"
               onClick={() => setSelected(cat.nombre)}
               className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-all ${
                 selected === cat.nombre
@@ -129,18 +122,22 @@ export function CategoryModal({
 
         {/* Remember toggle */}
         <label className="flex items-center gap-3 cursor-pointer">
-          <div
-            className={`relative w-10 h-6 rounded-full transition-colors ${
+          <button
+            type="button"
+            role="switch"
+            aria-checked={recordar}
+            aria-label="Recordar siempre para este comercio"
+            onClick={() => setRecordar(!recordar)}
+            className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${
               recordar ? "bg-blue-600" : "bg-gray-300"
             }`}
-            onClick={() => setRecordar(!recordar)}
           >
             <div
               className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
                 recordar ? "translate-x-4" : ""
               }`}
             />
-          </div>
+          </button>
           <span className="text-sm text-gray-600">Recordar siempre para este comercio</span>
         </label>
 
