@@ -1,18 +1,11 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error("Missing Google OAuth env vars: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required");
-}
-if (!process.env.ALLOWED_GOOGLE_EMAIL) {
-  throw new Error("Missing ALLOWED_GOOGLE_EMAIL env var");
-}
-
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
@@ -22,11 +15,12 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user }) {
-      const allowedEmail = process.env.ALLOWED_GOOGLE_EMAIL!;
+      const allowedEmail = process.env.ALLOWED_GOOGLE_EMAIL;
+      if (!allowedEmail) return false;
       return user.email?.toLowerCase() === allowedEmail.toLowerCase();
     },
     async jwt({ token }) {
-      if (token.email?.toLowerCase() === process.env.ALLOWED_GOOGLE_EMAIL!.toLowerCase()) {
+      if (process.env.ALLOWED_GOOGLE_EMAIL && token.email?.toLowerCase() === process.env.ALLOWED_GOOGLE_EMAIL.toLowerCase()) {
         token.role = "admin";
       }
       return token;
