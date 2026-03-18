@@ -12,6 +12,14 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "Gastos Familiares",
   description: "Control de gastos familiares",
+  icons: {
+    apple: "/familia.PNG",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Gastos Familiares",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
