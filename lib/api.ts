@@ -10,9 +10,7 @@ export function apiError(error: unknown, status = 500): NextResponse {
     );
   }
   const message =
-    process.env.NODE_ENV === "production"
-      ? "Internal server error"
-      : error instanceof Error
+    error instanceof Error
       ? error.message
       : String(error);
   return NextResponse.json({ error: message }, { status });
