@@ -24,17 +24,18 @@ export function RenovarMesButton({ ciclos, onCicloCreado }: Props) {
   });
 
   const today = new Date();
-  const dd = String(today.getDate()).padStart(2, "0");
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(today.getFullYear());
-  const fechaHoy = `${dd}/${mm}/${yyyy}`;
-  const fechaHoyLabel = today.toLocaleDateString("es-CL", {
-    day: "numeric",
-    month: "short",
-  });
+  const todayISO = today.toISOString().split("T")[0];
+
+  const [fechaISO, setFechaISO] = useState(todayISO);
+
+  function isoToDDMMYYYY(iso: string): string {
+    const [y2, m2, d2] = iso.split("-");
+    return `${d2}/${m2}/${y2}`;
+  }
 
   function handleOpen() {
     setError("");
+    setFechaISO(todayISO);
     setOpen(true);
   }
 
@@ -45,7 +46,7 @@ export function RenovarMesButton({ ciclos, onCicloCreado }: Props) {
       const res = await fetch("/api/ciclos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mes: proximoMes, fechaInicio: fechaHoy }),
+        body: JSON.stringify({ mes: proximoMes, fechaInicio: isoToDDMMYYYY(fechaISO) }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -81,11 +82,22 @@ export function RenovarMesButton({ ciclos, onCicloCreado }: Props) {
             <p className="text-xs text-blue-500 uppercase tracking-wide font-medium">nuevo ciclo</p>
           </div>
 
-          <p className="text-sm text-gray-600 text-center leading-relaxed">
-            Desde hoy{" "}
-            <span className="font-semibold text-gray-900">{fechaHoyLabel}</span>, los gastos
-            nuevos se asignarán a{" "}
-            <span className="font-semibold capitalize">{proximoMesLabel}</span>.
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de inicio del ciclo
+            </label>
+            <input
+              type="date"
+              value={fechaISO}
+              max={todayISO}
+              onChange={(e) => setFechaISO(e.target.value)}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <p className="text-sm text-gray-500 text-center leading-relaxed">
+            Los gastos desde esa fecha se asignarán a{" "}
+            <span className="font-semibold capitalize text-gray-900">{proximoMesLabel}</span>.
           </p>
 
           {error && (
