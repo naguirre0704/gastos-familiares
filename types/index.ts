@@ -48,3 +48,10 @@ export interface ResumenCategoria {
   presupuesto: number;
   porcentaje: number;
 }
+
+export interface Ciclo {
+  id: number;
+  mes: string;         // "2026-04"
+  fechaInicio: string; // "27/03/2026"
+  creadoEn?: string;
+}

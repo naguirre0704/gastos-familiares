@@ -1,5 +1,5 @@
 import { getSupabase } from "./supabase";
-import { Gasto, Comercio, Categoria, Presupuesto, Importacion } from "@/types";
+import { Gasto, Comercio, Categoria, Presupuesto, Importacion, Ciclo } from "@/types";
 
 const CATEGORIAS_INICIALES: Categoria[] = [
   { nombre: "Supermercado",    emoji: "🛒", color: "#10B981", presupuestoMensual: 500000, activa: true },
@@ -68,6 +68,16 @@ function toImportacion(r: any): Importacion {
     timestamp: r.timestamp,
     cantidad: r.cantidad,
     desdeDate: r.desde_date,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toCiclo(r: any): Ciclo {
+  return {
+    id: r.id,
+    mes: r.mes,
+    fechaInicio: r.fecha_inicio,
+    creadoEn: r.creado_en,
   };
 }
 
@@ -281,4 +291,27 @@ export async function getUltimaImportacion(): Promise<Importacion | null> {
     .single();
   if (error || !data) return null;
   return toImportacion(data);
+}
+
+// ─── CICLOS ───────────────────────────────────────────────────────────────────
+
+export async function getCiclos(): Promise<Ciclo[]> {
+  const { data, error } = await getSupabase()
+    .from("ciclos")
+    .select("*")
+    .order("fecha_inicio", { ascending: true });
+  if (error) {
+    // Tabla aún no creada — degradar gracefully hasta que se corra la migración
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any).code === "42P01") return [];
+    throw error;
+  }
+  return (data ?? []).map(toCiclo);
+}
+
+export async function crearCiclo(mes: string, fechaInicio: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from("ciclos")
+    .insert({ mes, fecha_inicio: fechaInicio });
+  if (error) throw error;
 }

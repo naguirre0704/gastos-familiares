@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS gmail_tokens (
 -- Enable RLS on all tables (defense in depth)
 -- The app uses service_role key server-side which bypasses RLS,
 -- but RLS protects against accidental anon/public key exposure.
+ALTER TABLE ciclos        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gastos        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categorias    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comercios     ENABLE ROW LEVEL SECURITY;
@@ -69,7 +70,16 @@ ALTER TABLE presupuestos  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE importaciones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gmail_tokens  ENABLE ROW LEVEL SECURITY;
 
+-- Ciclos de facturación (inicio de cada período mensual)
+CREATE TABLE IF NOT EXISTS ciclos (
+  id          SERIAL PRIMARY KEY,
+  mes         TEXT NOT NULL UNIQUE,
+  fecha_inicio TEXT NOT NULL,
+  creado_en   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Deny all access via anon/authenticated roles (service_role bypasses this)
+CREATE POLICY "deny_all_ciclos"        ON ciclos        FOR ALL USING (false);
 CREATE POLICY "deny_all_gastos"        ON gastos        FOR ALL USING (false);
 CREATE POLICY "deny_all_categorias"    ON categorias    FOR ALL USING (false);
 CREATE POLICY "deny_all_comercios"     ON comercios     FOR ALL USING (false);

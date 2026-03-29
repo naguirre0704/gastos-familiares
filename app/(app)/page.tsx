@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Card } from "@/components/ui/Card";
 import { BudgetBar } from "@/components/BudgetBar";
 import { GastosList } from "@/components/GastosList";
 import { SyncButton } from "@/components/SyncButton";
 import { CategoryModal } from "@/components/CategoryModal";
-import { Gasto, Categoria, ResumenCategoria } from "@/types";
+import { RenovarMesButton } from "@/components/RenovarMesButton";
+import { Gasto, Categoria, ResumenCategoria, Ciclo } from "@/types";
+import { getCicloMes, getMesActualConCiclos } from "@/lib/ciclo";
 import { formatMonedaChile } from "@/lib/parser";
 
 interface PendingGasto {
@@ -24,13 +26,10 @@ function getMesActual() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function filtrarMes(gastos: Gasto[], mes: string) {
+function filtrarMes(gastos: Gasto[], mes: string, ciclos: Ciclo[]) {
   return gastos.filter((g) => {
     if (!g.fecha) return false;
-    const parts = g.fecha.split("/");
-    if (parts.length !== 3) return false;
-    const gastoMes = `${parts[2]}-${parts[1]}`;
-    return gastoMes === mes;
+    return getCicloMes(g.fecha, ciclos) === mes;
   });
 }
 
@@ -38,22 +37,32 @@ export default function DashboardPage() {
   useSession();
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [ciclos, setCiclos] = useState<Ciclo[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingGastos, setPendingGastos] = useState<PendingGasto[]>([]);
   const [currentPending, setCurrentPending] = useState<PendingGasto | null>(null);
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
   const [mesFiltro, setMesFiltro] = useState(getMesActual());
+  const initialMesFijado = useRef(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [gastosRes, catsRes] = await Promise.all([
+      const [gastosRes, catsRes, ciclosRes] = await Promise.all([
         fetch("/api/gastos"),
         fetch("/api/categorias"),
+        fetch("/api/ciclos"),
       ]);
       const gastosData = await gastosRes.json();
       const catsData = await catsRes.json();
+      const ciclosData = await ciclosRes.json();
       if (gastosData.gastos) setGastos(gastosData.gastos);
       if (catsData.categorias) setCategorias(catsData.categorias);
+      const fetchedCiclos: Ciclo[] = ciclosData.ciclos ?? [];
+      setCiclos(fetchedCiclos);
+      if (!initialMesFijado.current) {
+        setMesFiltro(getMesActualConCiclos(fetchedCiclos));
+        initialMesFijado.current = true;
+      }
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -122,14 +131,12 @@ export default function DashboardPage() {
   // ─── Meses disponibles (solo meses con al menos un gasto) ────────────────
 
   const mesesDisponibles = Array.from(
-    new Set(
-      gastos
+    new Set([
+      ...gastos
         .filter((g) => g.fecha && g.fecha.split("/").length === 3)
-        .map((g) => {
-          const parts = g.fecha.split("/");
-          return `${parts[2]}-${parts[1]}`;
-        })
-    )
+        .map((g) => getCicloMes(g.fecha, ciclos)),
+      getMesActualConCiclos(ciclos), // siempre incluir el ciclo activo
+    ])
   ).sort();
 
   const idxMes = mesesDisponibles.indexOf(mesFiltro);
@@ -138,7 +145,7 @@ export default function DashboardPage() {
 
   // ─── Compute summaries ────────────────────────────────────────────────────
 
-  const gastosDelMes = filtrarMes(gastos, mesFiltro);
+  const gastosDelMes = filtrarMes(gastos, mesFiltro, ciclos);
   const totalGastado = gastosDelMes.reduce((s, g) => s + g.monto, 0);
   const totalPresupuestado = categorias
     .filter((c) => c.activa)
@@ -216,6 +223,7 @@ export default function DashboardPage() {
               ›
             </button>
           </div>
+          <RenovarMesButton ciclos={ciclos} onCicloCreado={fetchData} />
           <SyncButton onSync={handleSync} />
         </div>
       </div>

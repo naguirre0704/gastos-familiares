@@ -1,24 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/Card";
 import { GastosList } from "@/components/GastosList";
 import { CategoryModal } from "@/components/CategoryModal";
 import { TransferenciaModal } from "@/components/TransferenciaModal";
 import { NuevoGastoModal } from "@/components/NuevoGastoModal";
-import { Gasto, Categoria } from "@/types";
+import { Gasto, Categoria, Ciclo } from "@/types";
+import { getCicloMes, getMesActualConCiclos } from "@/lib/ciclo";
 
 function getMesActual() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function getAvailableMonths(gastos: Gasto[]): string[] {
+function getAvailableMonths(gastos: Gasto[], ciclos: Ciclo[]): string[] {
   const set = new Set<string>();
   for (const g of gastos) {
-    const parts = g.fecha?.split("/");
-    if (parts?.length === 3) {
-      set.add(`${parts[2]}-${parts[1]}`);
+    if (g.fecha && g.fecha.split("/").length === 3) {
+      set.add(getCicloMes(g.fecha, ciclos));
     }
   }
   return Array.from(set).sort().reverse();
@@ -27,8 +27,10 @@ function getAvailableMonths(gastos: Gasto[]): string[] {
 export default function GastosPage() {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [ciclos, setCiclos] = useState<Ciclo[]>([]);
   const [loading, setLoading] = useState(true);
   const [mesFiltro, setMesFiltro] = useState(getMesActual());
+  const initialMesFijado = useRef(false);
   const [catFiltro, setCatFiltro] = useState("");
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
   const [nuevoGastoOpen, setNuevoGastoOpen] = useState(false);
@@ -39,21 +41,29 @@ export default function GastosPage() {
   const fetchData = useCallback(async () => {
     // Auto-categorize first so the fetched list is already up to date
     await fetch("/api/gastos/auto-categorize", { method: "POST" });
-    const [gastosRes, catsRes] = await Promise.all([
+    const [gastosRes, catsRes, ciclosRes] = await Promise.all([
       fetch("/api/gastos"),
       fetch("/api/categorias"),
+      fetch("/api/ciclos"),
     ]);
     const gastosData = await gastosRes.json();
     const catsData = await catsRes.json();
+    const ciclosData = await ciclosRes.json();
     if (gastosData.gastos) setGastos(gastosData.gastos);
     if (catsData.categorias) setCategorias(catsData.categorias);
+    const fetchedCiclos: Ciclo[] = ciclosData.ciclos ?? [];
+    setCiclos(fetchedCiclos);
+    if (!initialMesFijado.current) {
+      setMesFiltro(getMesActualConCiclos(fetchedCiclos));
+      initialMesFijado.current = true;
+    }
     setLoading(false);
   }, []);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const months = getAvailableMonths(gastos);
+  const months = getAvailableMonths(gastos, ciclos);
 
   const SIN_CAT = "__sin_categoria__";
 
@@ -63,9 +73,8 @@ export default function GastosPage() {
   }, [mesFiltro]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const gastosMes = gastos.filter((g) => {
-    const parts = g.fecha?.split("/");
-    if (!parts || parts.length !== 3) return false;
-    return `${parts[2]}-${parts[1]}` === mesFiltro;
+    if (!g.fecha) return false;
+    return getCicloMes(g.fecha, ciclos) === mesFiltro;
   });
 
   const sinCategoriaCount = gastosMes.filter((g) => !g.categoria).length;

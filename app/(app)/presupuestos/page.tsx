@@ -4,13 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Gasto, Categoria } from "@/types";
+import { Gasto, Categoria, Ciclo } from "@/types";
+import { getCicloMes, getMesActualConCiclos } from "@/lib/ciclo";
 import { formatMonedaChile } from "@/lib/parser";
-
-function getMesActual() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
 
 const COLORES_DEFAULT = [
   "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
@@ -75,18 +71,21 @@ export default function PresupuestosPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const mes = getMesActual();
+  const [ciclos, setCiclos] = useState<Ciclo[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
-      const [gastosRes, catsRes] = await Promise.all([
+      const [gastosRes, catsRes, ciclosRes] = await Promise.all([
         fetch("/api/gastos"),
         fetch("/api/categorias"),
+        fetch("/api/ciclos"),
       ]);
       const gastosData = await gastosRes.json();
       const catsData = await catsRes.json();
+      const ciclosData = await ciclosRes.json();
       if (gastosData.gastos) setGastos(gastosData.gastos);
       if (catsData.categorias) setCategorias(catsData.categorias);
+      setCiclos(ciclosData.ciclos ?? []);
     } finally {
       setLoading(false);
     }
@@ -94,10 +93,11 @@ export default function PresupuestosPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const mes = getMesActualConCiclos(ciclos);
+
   const gastosDelMes = gastos.filter((g) => {
-    const parts = g.fecha?.split("/");
-    if (!parts || parts.length !== 3) return false;
-    return `${parts[2]}-${parts[1]}` === mes;
+    if (!g.fecha) return false;
+    return getCicloMes(g.fecha, ciclos) === mes;
   });
 
   // ── Crear ──────────────────────────────────────────────────────────────────
@@ -292,7 +292,7 @@ export default function PresupuestosPage() {
                 {/* Left: emoji + info */}
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-xl"
+                    className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-xl"
                     style={{ backgroundColor: `${cat.color}20` }}
                   >
                     {cat.emoji}
@@ -311,7 +311,7 @@ export default function PresupuestosPage() {
                 </div>
 
                 {/* Right: budget + edit button */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <span className="font-bold text-gray-900 text-sm">
                     {formatMonedaChile(cat.presupuestoMensual)}
                   </span>
