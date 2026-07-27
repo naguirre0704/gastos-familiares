@@ -21,6 +21,8 @@ interface PendingGasto {
   cuenta: string;
 }
 
+const CATEGORIAS_OCULTAS_KEY = "dashboard:categoriasOcultas";
+
 function getMesActual() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -44,6 +46,31 @@ export default function DashboardPage() {
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
   const [mesFiltro, setMesFiltro] = useState(getMesActual());
   const initialMesFijado = useRef(false);
+  const [categoriasOcultas, setCategoriasOcultas] = useState<Set<string>>(new Set());
+  const [mostrarOcultas, setMostrarOcultas] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CATEGORIAS_OCULTAS_KEY);
+      if (raw) setCategoriasOcultas(new Set<string>(JSON.parse(raw)));
+    } catch (err) {
+      console.error("Error leyendo categorías ocultas:", err);
+    }
+  }, []);
+
+  const toggleOcultarCategoria = useCallback((nombre: string) => {
+    setCategoriasOcultas((prev) => {
+      const next = new Set(prev);
+      if (next.has(nombre)) next.delete(nombre);
+      else next.add(nombre);
+      try {
+        localStorage.setItem(CATEGORIAS_OCULTAS_KEY, JSON.stringify([...next]));
+      } catch (err) {
+        console.error("Error guardando categorías ocultas:", err);
+      }
+      return next;
+    });
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -174,6 +201,13 @@ export default function DashboardPage() {
     .filter((r) => r.gastado > 0 || r.presupuesto > 0)
     .sort((a, b) => b.porcentaje - a.porcentaje);
 
+  const resumenesVisibles = resumenes.filter(
+    (r) => !categoriasOcultas.has(r.categoria.nombre)
+  );
+  const resumenesOcultos = resumenes.filter((r) =>
+    categoriasOcultas.has(r.categoria.nombre)
+  );
+
   const ultimosGastos = [...gastosDelMes]
     .sort((a, b) => {
       const da = a.fecha.split("/").reverse().join("") + a.hora;
@@ -276,9 +310,43 @@ export default function DashboardPage() {
           </p>
         ) : (
           <div className="space-y-4">
-            {resumenes.map((r) => (
-              <BudgetBar key={r.categoria.nombre} resumen={r} />
+            {resumenesVisibles.map((r) => (
+              <BudgetBar
+                key={r.categoria.nombre}
+                resumen={r}
+                onToggleHidden={() => toggleOcultarCategoria(r.categoria.nombre)}
+              />
             ))}
+            {resumenesVisibles.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-2">
+                Todos los resúmenes están ocultos.
+              </p>
+            )}
+          </div>
+        )}
+
+        {resumenesOcultos.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <button
+              onClick={() => setMostrarOcultas((v) => !v)}
+              className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              {mostrarOcultas ? "Ocultar" : "Ver"} {resumenesOcultos.length} resumen
+              {resumenesOcultos.length > 1 ? "es" : ""} oculto
+              {resumenesOcultos.length > 1 ? "s" : ""}
+            </button>
+            {mostrarOcultas && (
+              <div className="space-y-3 mt-3">
+                {resumenesOcultos.map((r) => (
+                  <BudgetBar
+                    key={r.categoria.nombre}
+                    resumen={r}
+                    hidden
+                    onToggleHidden={() => toggleOcultarCategoria(r.categoria.nombre)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </Card>
